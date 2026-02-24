@@ -1,5 +1,8 @@
+from gui.views import MainView
+
+
 def main():
-    pass
+    MainView()
 
 
 if __name__ == '__main__':
