@@ -47,3 +47,40 @@ cap_in = {
     # 'right_click_menu': '',
     # 'visible': '',
 }
+
+other_in = {
+    'size': 15,
+    # 'disabled': '',
+    # 'password_char': ' ,
+    'justification': 'c',
+    # 'font': '',
+    # 'tooltip': '',
+    # 'border_width': '',
+    'enable_events': True,
+    # 'do_not_clear': '',
+    # 'focus': '',
+    # 'pad': '',
+    # 'use_readonly_for_disable': '',
+    # 'readonly': '',
+    # 'expand_x': '',
+    # 'expand_y': '',
+    # 'right_click_menu': '',
+    # 'visible': '',
+}
+
+main_frame = {
+    # 'title_location': '',
+    # 'relief': '',
+    'size': (150, 50),
+    # 'font': '',
+    # 'pad': '',
+    # 'border_width': '',
+    # 'tooltip': '',
+    # 'right_click_menu': '',
+    # 'expand_x': '',
+    # 'expand_y': '',
+    # 'grab': '',
+    # 'visible': '',
+    'element_justification': 'c',
+    'vertical_alignment': 'c',
+}
