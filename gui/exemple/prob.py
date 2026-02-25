@@ -80,7 +80,7 @@ def update_chart(canvas_elem, data):
     if hasattr(update_chart, "current_canvas"):
         update_chart.current_canvas.get_tk_widget().forget()
 
-    fig, ax = plt.subplots(figsize=(5, 4), dpi=100)
+    fig, ax = plt.subplots(figsize=(5, 4), dpi=1000)
     ax.plot(data, marker='o', color='#0078D7')
     ax.set_title("Рост капитала")
     ax.grid(True, linestyle='--', alpha=0.6)
@@ -89,7 +89,7 @@ def update_chart(canvas_elem, data):
 
 
 # --- Интерфейс ---
-sg.theme('DarkBlue12')
+sg.theme('Default1')
 
 
 # Левая часть: Вкладки ввода
@@ -146,7 +146,7 @@ while True:
 
             data_points = [1000 * (1 + rate) ** i for i in range(years + 1)]
             table_data = [[f"Год {i}", f"{v:,.2f}"] for i, v in enumerate(data_points)]
-
+            print(f'{data_points=}')
             # Обновляем интерфейс
             update_chart(window['-CANVAS-'], data_points)
             window['-TABLE-'].update(values=table_data)

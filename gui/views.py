@@ -21,8 +21,8 @@ class MainView:
                 sg.theme('LightGreen1')
                 self.window.close()
                 self.window = main_window()
-            elif ev == '-GO-':
+            # elif ev == '-GO-':
                 # self.window.move(0, 0)
-                self.window.maximize()
-                self.window['body'].update(visible=True)
+                # self.window.maximize()
+                # self.window['body'].update(visible=True)
         self.window.close()
