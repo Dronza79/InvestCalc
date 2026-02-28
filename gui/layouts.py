@@ -53,6 +53,9 @@ def additional_param():
                 [
                     sg.Checkbox('НДФЛ', key='ndfl', **chbx),
                     sg.Checkbox('Инфляция', key='inf', **chbx),
+                    sg.Frame('Кратность:', [[
+                        sg.Combo(['100', '500', '1000'], default_value=500, k='ratio', **combo_per)
+                    ]])
                 ]
             ],  **main_frame)
 
