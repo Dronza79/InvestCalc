@@ -1,72 +1,4 @@
-import PySimpleGUI as sg
-
-from gui.models import Period
-from .params import *
-
-
-def capital():
-    return sg.Frame('Желанный капитал:', [
-                [
-                    sg.Input('', key='capital', **cap_in),
-                    sg.T('\u20BD', font='_ 20'),
-                ]
-            ], **main_frame)
-
-
-def start_amount():
-    return sg.Frame('Начальная сумма:', [
-                [
-                    sg.Input('', key='start', s=10, **other_in),
-                    sg.T('\u20BD'),
-                ]
-            ], **main_frame)
-
-
-def regular_payment():
-    return sg.Frame('Регулярный платеж:', [
-                [
-                    sg.Input('', key='payment', s=10, **other_in),
-                    sg.T('\u20BD'),
-                ]
-            ], **main_frame)
-
-
-def invest_horizon():
-    return sg.Frame('Инвест горизонт:', [
-                [
-                    sg.Input('', key='horizon', s=10, **other_in)
-                ]
-            ], **main_frame)
-
-
-def plane_profit():
-    return sg.Frame('Плановая доходность:', [
-        [
-            sg.Input('', key='rate', s=8, **other_in),
-            sg.Text('%'),
-        ]
-    ], **main_frame)
-
-
-def additional_param():
-    return sg.Frame('Доп параметры:', [
-                [
-                    sg.Checkbox('НДФЛ', key='ndfl', **chbx),
-                    sg.Checkbox('Инфляция', key='inf', **chbx),
-                    sg.Frame('Кратность:', [[
-                        sg.Combo(['100', '500', '1000'], default_value=500, k='ratio', **combo_per)
-                    ]])
-                ]
-            ],  **main_frame)
-
-
-def periodicity():
-    list_period = Period.glp()
-    return sg.Frame('Периодичность:', [
-                [
-                    sg.Combo(list_period, default_value=list_period[1], key='period',  **combo_per),
-                ]
-            ],  **main_frame)
+from gui.elements import *
 
 
 def layout_left_invest():
@@ -84,9 +16,14 @@ def layout_left_invest():
             periodicity(),
         ], [
             additional_param(),
-        ], [
         ]
     ]
+
+
+def explanations():
+    return [[
+        sg.Text(**expl_t)
+    ]]
 
 
 def left_part():
@@ -96,28 +33,29 @@ def left_part():
                 sg.Tab('Инвестиции', layout_left_invest()),
                 sg.Tab('Облигации', [[]], expand_x=True),
                 sg.Tab('Что-то', [[]], expand_x=True, disabled=True),
-            ]], **lft_tabgroup)
+            ]], k='LTAB', **lft_tabgroup)
         ], [
             sg.Button('РАССЧИТАТЬ', key='-GO-', **main_btn),
         ]
     ], **lft_col)
 
 
-def explanations():
-    return [[
-        sg.Text(key='explan', **expl_t)
-    ]]
-
-
 def right_part():
     return sg.Col([
         [sg.TabGroup([[
-            sg.Tab('Пояснения', explanations(), **rht_tab),
-            sg.Tab('График', [[]], **rht_tab),
-            sg.Tab('Таблица', [[]], **rht_tab),
-        ]], **rht_tabgroup)],
+            sg.Tab('Пояснения', explanations(), key='explan'),  # **rht_tab),
+            sg.Tab('График', [[sg.Canvas(key='-CANVAS-', **cvs)]]), #**rht_tab),
+            sg.Tab('Таблица', []), #**rht_tab),
+        ]], k='RTAB', **rht_tabgroup)],
     ], **rht_col)
 
 
 def main_layout():
-    return [left_part(), sg.VSep(), right_part()]
+    return [
+        [
+            left_part(), sg.VSep(), right_part()
+        # ], [
+        #     sg.Push(),
+        #     sg.Sizegrip(),
+        ]
+    ]

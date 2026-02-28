@@ -36,11 +36,25 @@ class Period:
 def draw_figure(canvas, figure):
     figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
     figure_canvas_agg.draw()
-    figure_canvas_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
+    figure_canvas_agg.get_tk_widget().pack(side='top', fill='both', expand=True)
     return figure_canvas_agg
 
 
-def update_chart(canvas_elem, data_list, labels):
+def create_inscriptions_value(canvas_elem, data_list):
+    for i, layer_values in enumerate(data_list[0][1:], start=1):
+        val = data_list[1][i] + data_list[2][i]
+
+        # Вычисляем Y-координату для текста (середина слоя)
+        text_y = val
+        last_x = layer_values
+
+        label_text = f"{(val + 499) // 500 * 500:,}".replace(',', ' ')
+
+        canvas_elem.text(last_x, text_y, label_text,
+                         va='center', ha='right', fontsize=9, color='black')
+
+
+def update_chart(canvas_elem, data_list):
     # Очистка старого графика если есть
     print(f'{data_list=}')
     if hasattr(update_chart, "current_canvas"):
@@ -57,9 +71,9 @@ def update_chart(canvas_elem, data_list, labels):
     font_title = {'size': 12}
     font_label = {'size': 10}
 
-    ax.set_title("Накопительный итог", fontdict=font_title)
-    ax.set_ylabel("Сумма (руб.)", fontdict=font_label)
-    ax.set_xlabel("Срок в годах", fontdict=font_label)
+    ax.set_title("Рост капитала", fontdict=font_title)
+    ax.set_ylabel("Размер капитала (руб.)", fontdict=font_label)
+    ax.set_xlabel("Срок (год/лет)", fontdict=font_label)
 
     # Для делений на осях (чисел)
     ax.tick_params(axis='both', labelsize=9, labelcolor='grey')
@@ -73,27 +87,8 @@ def update_chart(canvas_elem, data_list, labels):
     # Построение самого графика
     ax.stackplot(*data_list, labels=['Внесено', "Сложный процент"])
 
-    for i, layer_values in enumerate(data_list[0][1:], start=1):
-        val = data_list[1][i] + data_list[2][i]  # Берем значение в последней точке
-
-        # Вычисляем Y-координату для текста (середина слоя)
-        text_y = val
-        last_x = layer_values
-
-        # Форматируем число (например, в 'к')
-        # label_text = (
-        #     f"{int(val / 1e6)}кк" if val == 1e6
-        #     else f"{val / 1e6:.1f}кк" if val > 1e6
-        #     else f"{int(val / 1e3)}к"
-        # )
-        label_text = f"{(val + 499) // 500 * 500:,}".replace(',', ' ')
-
-        # Рисуем текст
-        print(f'{last_x=} {text_y=} {label_text=}')
-        ax.text(last_x, text_y, label_text,
-                va='center', ha='right', fontsize=9, fontweight='bold', color='black')
-
-        # current_bottom += val  # Сдвигаем "пол" для следующего слоя
+    # Оформление значений на графике
+    create_inscriptions_value(ax, data_list)
 
     fig.tight_layout()
 
