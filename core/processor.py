@@ -42,9 +42,9 @@ def main():
         payments.append(val['all_payment'])
         capital.append(val['sum_capital'])
 
-    # print(months)
-    # print(payments)
-    # print(capital)
+    print(months)
+    print(payments)
+    print(capital)
 
     plt.plot(months, payments, label="Платежи", color="blue")
     plt.plot(months, capital, label="Сложный процент", color="red")
@@ -53,3 +53,6 @@ def main():
     plt.flag()
     plt.show()
 
+
+
+main()

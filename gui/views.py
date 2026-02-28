@@ -1,3 +1,5 @@
+import this
+
 from core.utilites import div_to_ranks
 from .windows import *
 
@@ -15,13 +17,14 @@ class MainView:
             print(f'MainView {ev=} {val=}')
             if ev == sg.WIN_CLOSED:
                 break
-            elif ev in ['capital', 'payment']:
+            elif ev in ['capital', 'payment', 'start']:
                 self.window[ev].update(value=div_to_ranks(val[ev]))
             elif ev == 'theme':
                 sg.theme('LightGreen1')
                 self.window.close()
                 self.window = main_window()
-            # elif ev == '-GO-':
+            elif ev == '-GO-':
+                self.window['explan'].update("".join([this.d.get(c, c) for c in this.s]))
                 # self.window.move(0, 0)
                 # self.window.maximize()
                 # self.window['body'].update(visible=True)
