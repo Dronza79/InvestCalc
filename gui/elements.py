@@ -60,11 +60,11 @@ def additional_param():
             ],  **main_frame)
 
 
-def periodicity():
+def periodicity(key):
     list_period = Period.glp()
     return sg.Frame('Периодичность:', [
                 [
-                    sg.Combo(list_period, default_value=list_period[1], key='period',  **combo_per),
+                    sg.Combo(list_period, default_value=list_period[1], key=key,  **combo_per),
                 ]
             ],  **main_frame)
 

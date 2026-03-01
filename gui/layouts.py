@@ -7,13 +7,13 @@ def layout_left_invest():
             capital(),
         ], [
             regular_payment(),
-            periodicity(),
+            periodicity('PER-PAYMENT'),
         ], [
             start_amount(),
             invest_horizon(),
         ], [
             plane_profit(),
-            periodicity(),
+            periodicity('PER-PROFIT'),
         ], [
             additional_param(),
         ]
@@ -30,9 +30,9 @@ def left_part():
     return sg.Col([
         [
             sg.TabGroup([[
-                sg.Tab('Инвестиции', layout_left_invest()),
-                sg.Tab('Облигации', [[]], expand_x=True),
-                sg.Tab('Что-то', [[]], expand_x=True, disabled=True),
+                sg.Tab('Инвестиции', layout_left_invest(), k='-INVEST-'),
+                sg.Tab('Облигации', [[]], k='-BOND-'),
+                sg.Tab('Что-то', [[]], k='-DUNNO-'),
             ]], k='LTAB', **lft_tabgroup)
         ], [
             sg.Button('РАССЧИТАТЬ', key='-GO-', **main_btn),
@@ -43,9 +43,9 @@ def left_part():
 def right_part():
     return sg.Col([
         [sg.TabGroup([[
-            sg.Tab('Пояснения', explanations(), key='explan'),  # **rht_tab),
-            sg.Tab('График', [[sg.Canvas(key='-CANVAS-', **cvs)]]), #**rht_tab),
-            sg.Tab('Таблица', []), #**rht_tab),
+            sg.Tab('Пояснения', explanations(), key='-NOTE-'),  # **rht_tab),
+            sg.Tab('График', [[sg.Canvas(key='-CANVAS-', **cvs)]], k='-GRAPH-'), #**rht_tab),
+            sg.Tab('Таблица', [], k='-TABLE-'), #**rht_tab),
         ]], k='RTAB', **rht_tabgroup)],
     ], **rht_col)
 

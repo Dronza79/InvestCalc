@@ -24,6 +24,16 @@ class MainView:
                 self.window = main_window()
             elif ev == '-GO-':
                 self.window.move_to_center()
+            elif ev == 'LTAB':
+                [el.update(visible=True) for el in self.window['RTAB'].Rows[0]]
+                if val['LTAB'] == '-BOND-':
+                    [el.update(visible=False) for el in self.window['RTAB'].Rows[0] if el.key != '-NOTE-']
+                elif val['LTAB'] == '-DUNNO-':
+                    [el.update(visible=False) for el in self.window['RTAB'].Rows[0] if el.key != '-TABLE-']
+                el = self.window['RTAB'].Rows[0][0]
+                if el.visible:
+                    el.select()
+
         self.window.close()
 
     def init_build_graph(self):

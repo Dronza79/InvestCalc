@@ -151,9 +151,9 @@ main_btn = {
 }
 
 lft_tabgroup = {
-    # 'tab_location': 'topleft',
+    'tab_location': 'topleft',
     # font: Any = None,
-    # enable_events: bool = False,
+    'enable_events': True,
     # pad: tuple[int, int] | tuple[tuple[int, int], tuple[int, int]] | tuple[int, tuple[int, int]] | tuple[tuple[int, int], int] | int = None,
     # border_width: int = None,
     # 'tab_border_width': 1,
