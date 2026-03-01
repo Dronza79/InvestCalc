@@ -18,12 +18,6 @@ class MainView:
                 break
             elif ev in ['capital', 'payment', 'start']:
                 self.window[ev].update(value=div_to_ranks(val[ev]))
-            elif ev == 'theme':
-                sg.theme('LightGreen1')
-                self.window.close()
-                self.window = main_window()
-            elif ev == '-GO-':
-                self.window.move_to_center()
             elif ev == 'LTAB':
                 [el.update(visible=True) for el in self.window['RTAB'].Rows[0]]
                 if val['LTAB'] == '-BOND-':
@@ -33,6 +27,9 @@ class MainView:
                 el = self.window['RTAB'].Rows[0][0]
                 if el.visible:
                     el.select()
+
+            elif ev == '-GO-':
+                self.window.move_to_center()
 
         self.window.close()
 
