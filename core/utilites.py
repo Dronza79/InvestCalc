@@ -24,8 +24,43 @@ def format_digit_years(digit):  # Именительный подеж
 
 def format_years_genitive(digit):
     print(f'{digit=}')
-    num = int(float(digit))
+    num = int(float(str(digit).replace(',', '.')))
     digit = str(digit).replace('.', ',')
     if num % 10 == 1 and num % 100 != 11:
         return f'{digit} года'
     return f'{digit} лет'
+
+
+def clear_field_percent(string: str):
+    string = re.sub(r'[^\d.,]', '', string)
+    string = string.replace(',', '.')
+    if '.' in string:
+        part = string.split('.')
+        part.insert(1, '.')
+        string = ''.join(part)
+    return string
+
+
+def clear_field_horizon(string: str):
+    string = re.sub(r'[^\d.,]', '', string)
+    string = string.replace(',', '.')
+    if re.search(r'^\d{1,2}$', string):
+        return string
+    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.)|(\d{3})$', string):
+        return string
+    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.[0-1])|(\d{3}\.)$', string):
+        return string
+    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2]))|(\d{3}\.\d)$', string):
+        return string
+    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.)|(\d{3}\.\d{2})$', string):
+        return string
+    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.2)|(\d{3}\.\d{3})$', string):
+        return string
+    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.20)$', string):
+        return string
+    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.20[2-9])$', string):
+        return string
+    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.20[2-9]\d)$', string):
+        return string
+    return string[:-1]
+

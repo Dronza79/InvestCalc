@@ -1,4 +1,4 @@
-from core.utilites import div_to_ranks
+from core.utilites import div_to_ranks, clear_field_horizon
 from .models import update_chart
 from .windows import *
 
@@ -18,6 +18,8 @@ class MainView:
                 break
             elif ev in ['capital', 'payment', 'start']:
                 self.window[ev].update(value=div_to_ranks(val[ev]))
+            elif ev == 'horizon':
+                self.window[ev].update(value=clear_field_horizon(val[ev]))
             elif ev == 'LTAB':
                 [el.update(visible=True) for el in self.window['RTAB'].Rows[0]]
                 if val['LTAB'] == '-BOND-':
