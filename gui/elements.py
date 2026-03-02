@@ -1,6 +1,7 @@
 import PySimpleGUI as sg
 
-from gui.models import Period
+from core.utilites import format_digit_years, div_to_ranks, format_years_genitive
+from .models import Period
 from .params import *
 
 
@@ -69,3 +70,19 @@ def periodicity(key):
             ],  **main_frame)
 
 
+def expl_title(period_payment, payment='0', horizon='0', **kwargs):
+    print(f'{kwargs=}')
+    param = {'font': '_ 20', 'pad': (5, 0)}
+    if not horizon: horizon = 0
+    return sg.Col([
+        [
+            sg.Text('Откладывая по', **param),
+            sg.Text(div_to_ranks(payment), **param),
+            sg.T('\u20BD', **param),
+            sg.T(period_payment, **param)
+        ], [
+           sg.T('на протяжении', **param),
+           sg.T(f'{format_years_genitive(horizon)},', **param),
+           sg.T('вы накопите:', **param)
+        ]
+    ], expand_x=True, element_justification='l', pad=20)

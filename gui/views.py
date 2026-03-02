@@ -29,7 +29,15 @@ class MainView:
                     el.select()
 
             elif ev == '-GO-':
-                self.window.move_to_center()
+                outres = self.window['-BODYNOTE-']
+                if outres.metadata:
+                    self.window[f'OUTRES-{outres.metadata}'].update(visible=False)
+
+                outres.metadata += 1
+                self.window.extend_layout(
+                    outres,
+                    [[layout_right_explan_invest(f'OUTRES-{outres.metadata}', **val)]])
+
 
         self.window.close()
 

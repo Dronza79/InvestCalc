@@ -134,7 +134,7 @@ main_btn = {
     # border_width: int = None,
     # 'size': (10, 2),
     # auto_size_button: bool = None,
-    'button_color': 'white on green',
+
     # disabled_button_color: tuple[str, str] | str = None,
     # highlight_colors: tuple[str, str] = None,
     # mouseover_colors: tuple[str, str] | str = (None, None),
@@ -142,7 +142,7 @@ main_btn = {
     # font: Any = None,
     # bind_return_key: bool = False,
     # focus: bool = False,
-    'pad': 15,
+    # 'pad': 15,
     # key: str | int | tuple | object = None,
     # right_click_menu: list[list[list[str] | str]] = None,
     'expand_x': True,
@@ -294,7 +294,7 @@ combo_per = {
     # expand_y: bool = False,
     # tooltip: str = None,
     'readonly': True,
-    'font': '_ 12',
+    'font': '_ 11',
     # visible: bool = True,
 }
 

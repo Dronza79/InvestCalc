@@ -7,23 +7,28 @@ def layout_left_invest():
             capital(),
         ], [
             regular_payment(),
-            periodicity('PER-PAYMENT'),
+            periodicity('period_payment'),
         ], [
             start_amount(),
             invest_horizon(),
         ], [
             plane_profit(),
-            periodicity('PER-PROFIT'),
+            periodicity('period_profit'),
         ], [
             additional_param(),
         ]
     ]
 
 
-def explanations():
-    return [[
-        sg.Text(**expl_t)
-    ]]
+def layout_right_explan_invest(key, **kwargs):
+    print(f'layout_right_explan_invest({key=}, {kwargs=})')
+    return sg.pin(sg.Col([
+        [
+            expl_title(**kwargs)
+        ], [
+            # sg.T(capital,)
+        ]
+    ], key=key))
 
 
 def left_part():
@@ -35,7 +40,9 @@ def left_part():
                 sg.Tab('Что-то', [[]], k='-DUNNO-'),
             ]], k='LTAB', **lft_tabgroup)
         ], [
-            sg.Button('РАССЧИТАТЬ', key='-GO-', **main_btn),
+            sg.Button('РАССЧИТАТЬ', key='-GO-', button_color='white on DarkGreen', **main_btn),
+        ], [
+            sg.Button('ОЧИСТИТЬ', key='-CLR-', button_color='white on FireBrick', **main_btn),
         ]
     ], **lft_col)
 
@@ -43,9 +50,9 @@ def left_part():
 def right_part():
     return sg.Col([
         [sg.TabGroup([[
-            sg.Tab('Пояснения', explanations(), key='-NOTE-'),  # **rht_tab),
-            sg.Tab('График', [[sg.Canvas(key='-CANVAS-', **cvs)]], k='-GRAPH-'), #**rht_tab),
-            sg.Tab('Таблица', [], k='-TABLE-'), #**rht_tab),
+            sg.Tab('Пояснения', [[sg.Col([[]], key='-BODYNOTE-', metadata=0)]], key='-NOTE-'),
+            sg.Tab('График', [[sg.Canvas(key='-CANVAS-', **cvs)]], k='-GRAPH-'),
+            sg.Tab('Таблица', [], k='-TABLE-'),
         ]], k='RTAB', **rht_tabgroup)],
     ], **rht_col)
 

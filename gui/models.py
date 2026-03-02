@@ -5,11 +5,11 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class Period:
     __ADDICTION = {
-        'неделя': 52,
-        'месяц': 12,
-        'квартал': 4,
-        'полгода': 2,
-        'год': 1,
+        'еженедельно': 52,
+        'ежемесячно': 12,
+        'ежеквартально': 4,
+        'полугодично': 2,
+        'ежегодно': 1,
     }
 
     def __init__(self, name, value):
