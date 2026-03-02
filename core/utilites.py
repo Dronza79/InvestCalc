@@ -46,15 +46,15 @@ def clear_field_horizon(string: str):
     string = string.replace(',', '.')
     if re.search(r'^\d{1,2}$', string):
         return string
-    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.)|(\d{3})$', string):
+    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.)$|^(\d{2}\.)$', string):
         return string
-    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.[0-1])|(\d{3}\.)$', string):
+    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.[0-1])$|^(\d{2}\.\d)$', string):
         return string
-    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2]))|(\d{3}\.\d)$', string):
+    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2]))$|^(\d{2}\.\d{2})$', string):
         return string
-    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.)|(\d{3}\.\d{2})$', string):
+    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.)$|^(\d{2}\.\d{3})$', string):
         return string
-    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.2)|(\d{3}\.\d{3})$', string):
+    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.2)$', string):
         return string
     elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.20)$', string):
         return string
