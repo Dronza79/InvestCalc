@@ -5,34 +5,34 @@ from .models import Period
 from .params import *
 
 
-def capital():
+def capital_input():
     return sg.Frame('Желанный капитал:', [
                 [
-                    sg.Input('', key='capital', **cap_in),
+                    sg.Input('1', key='capital', **cap_in),
                     sg.T('\u20BD', font='_ 20'),
                 ]
             ], **main_frame)
 
 
-def start_amount():
+def start_amount_input():
     return sg.Frame('Начальная сумма:', [
                 [
-                    sg.Input('', key='start', s=10, **other_in),
+                    sg.Input('1', key='initial', s=10, **other_in),
                     sg.T('\u20BD'),
                 ]
             ], **main_frame)
 
 
-def regular_payment():
+def regular_payment_input():
     return sg.Frame('Регулярный платеж:', [
                 [
-                    sg.Input('', key='payment', s=10, **other_in),
+                    sg.Input('1', key='payment', s=10, **other_in),
                     sg.T('\u20BD'),
                 ]
             ], **main_frame)
 
 
-def invest_horizon():
+def invest_horizon_input():
     return sg.Frame('Инвест горизонт:', [
                 [
                     sg.Input('', key='horizon', s=10, **other_in)
@@ -40,7 +40,7 @@ def invest_horizon():
             ], **main_frame)
 
 
-def plane_profit():
+def plane_profit_input():
     return sg.Frame('Плановая доходность:', [
         [
             sg.Input('', key='rate', s=8, **other_in),
@@ -61,7 +61,7 @@ def additional_param():
             ],  **main_frame)
 
 
-def periodicity(key):
+def periodicity_combo(key):
     list_period = Period.glp()
     return sg.Frame('Периодичность:', [
                 [
@@ -70,9 +70,9 @@ def periodicity(key):
             ],  **main_frame)
 
 
-def expl_title(period_payment, payment='0', horizon='0', **kwargs):
-    print(f'{kwargs=}')
-    param = {'font': '_ 20', 'pad': (5, 0)}
+def invest_header_output(period_payment, payment='0', horizon='0', **kwargs):
+    # print(f'{kwargs=}')
+    param = {'font': 'Courier 20', 'pad': (5, 0)}
     if not horizon: horizon = 0
     return sg.Col([
         [
@@ -85,4 +85,35 @@ def expl_title(period_payment, payment='0', horizon='0', **kwargs):
            sg.T(f'{format_years_genitive(horizon)},', **param),
            sg.T('вы накопите:', **param)
         ]
-    ], expand_x=True, element_justification='l', pad=20)
+    ], expand_x=True, element_justification='c', pad=20)
+
+
+def invest_leader_output(capital: str, **kwargs):
+    # print(f'{kwargs=}')
+    param = {'font': 'Courier 50 bold', 'pad': (5, 0)} # 'background_color': 'red'}
+    if not capital: capital = 0
+    return sg.Col([
+        [
+            sg.Text(div_to_ranks(capital), **param),
+            sg.T('\u20BD', **param),
+        ]
+    ], expand_x=True, element_justification='c', pad=10) #, background_color='blue')
+
+
+def invest_liner_output(key, **kwargs):
+    param = {'font': 'Courier 18', 'pad': (5, 0)} # 'background_color': 'red'}
+    ADD = {
+        'start': ('initial', 'Начальная сумма:'),
+        'contrib': ('deposit', 'Сумма пополнений:'),
+        'received': ('income', 'Ожидаемый доход:'),
+        'paid': ('taxes', 'Уплачено налогов:'),
+
+    }
+    return sg.Col([
+        [
+            sg.Text(f'{ADD[key][1]:.<40}', **param),
+            # sg.Push(),
+            sg.Text(div_to_ranks(kwargs[ADD[key][0]]), **param),
+            sg.T('\u20BD', **param),
+        ]
+    ], expand_x=True, element_justification='l', pad=10) #, background_color='blue')

@@ -1,4 +1,5 @@
 import re
+from datetime import datetime as dd
 
 
 def clear_field_digits(string):
@@ -32,35 +33,47 @@ def format_years_genitive(digit):
 
 
 def clear_field_percent(string: str):
-    string = re.sub(r'[^\d.,]', '', string)
-    string = string.replace(',', '.')
-    if '.' in string:
-        part = string.split('.')
-        part.insert(1, '.')
-        string = ''.join(part)
-    return string
+    string = re.sub(r'[^\d.,]', '', string.replace('.', ','))
+
+    if re.fullmatch(r'\d{0,3}(?:,\d{0,3})?', string):
+        return string
+    return string[:-1]
 
 
 def clear_field_horizon(string: str):
     string = re.sub(r'[^\d.,]', '', string)
-    string = string.replace(',', '.')
-    if re.search(r'^\d{1,2}$', string):
-        return string
-    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.)$|^(\d{2}\.)$', string):
-        return string
-    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.[0-1])$|^(\d{2}\.\d)$', string):
-        return string
-    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2]))$|^(\d{2}\.\d{2})$', string):
-        return string
-    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.)$|^(\d{2}\.\d{3})$', string):
-        return string
-    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.2)$', string):
-        return string
-    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.20)$', string):
-        return string
-    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.20[2-9])$', string):
-        return string
-    elif re.search(r'^(0[1-9]|[12][0-9]|3[01]\.(0[1-9]|1[0-2])\.20[2-9]\d)$', string):
-        return string
-    return string[:-1]
+    count_sep = string.count('.') + string.count(',')
+    string = (
+        string.replace(',', '.') if count_sep > 1 else
+        string.replace('.', ',')
+    )
+
+    day_p = r'(?:0[1-9]|[12][0-9]|3[01]|[1-9])'
+    month_p = r'(?:0[1-9]|1[0-2]|[1-9])'
+    year_p = r'(?:2(?:0(?:[2-9]\d?)?)?)'
+    number = r'(?:\d|[1-4]\d)'
+    dec = r'\d{0,3}'
+
+    valid_states = [
+        fr'^(?:{number}|50)$',
+        fr'^{number},{dec}$',
+        rf'^{day_p}[.,]?$',
+        rf'^{day_p}[.,]{month_p}?$',
+        rf'^{day_p}[.,]{month_p}[,.]{year_p}?$',
+    ]
+
+    if not any(re.fullmatch(p, string) for p in valid_states):
+        return string[:-1]
+
+    if re.search(r'\.(\d{4})$', string):
+        try:
+            input_date = dd.strptime(string, '%d.%m.%Y').date()
+            today = dd.now().date()
+            if input_date <= today:
+                return string[:-1]
+        except ValueError:
+            # Если дата не существует блокирую ввод
+            return string[:-1]
+
+    return string
 

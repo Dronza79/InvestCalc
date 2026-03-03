@@ -354,7 +354,7 @@ cvs = {
     # border_width: int = 0,
 }
 
-# exp_both = {
-#     'expand_x': True,
-#     'expand_y': True,
-# }
+exp_both = {
+    'expand_x': True,
+    'expand_y': True,
+}

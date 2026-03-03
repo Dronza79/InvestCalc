@@ -1,4 +1,4 @@
-from core.utilites import div_to_ranks, clear_field_horizon
+from core.utilites import div_to_ranks, clear_field_horizon, clear_field_percent
 from .models import update_chart
 from .windows import *
 
@@ -16,10 +16,11 @@ class MainView:
             print(f'MainView {ev=} {val=}')
             if ev == sg.WIN_CLOSED:
                 break
-            elif ev in ['capital', 'payment', 'start']:
+            elif ev in ['capital', 'payment', 'initial']:
                 self.window[ev].update(value=div_to_ranks(val[ev]))
-            elif ev == 'horizon':
-                self.window[ev].update(value=clear_field_horizon(val[ev]))
+            elif ev in ['horizon', 'rate']:
+                clear_func = clear_field_horizon if ev == 'horizon' else clear_field_percent
+                self.window[ev].update(value=clear_func(val[ev]))
             elif ev == 'LTAB':
                 [el.update(visible=True) for el in self.window['RTAB'].Rows[0]]
                 if val['LTAB'] == '-BOND-':

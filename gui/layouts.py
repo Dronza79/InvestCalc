@@ -4,16 +4,16 @@ from gui.elements import *
 def layout_left_invest():
     return [
         [
-            capital(),
+            capital_input(),
         ], [
-            regular_payment(),
-            periodicity('period_payment'),
+            regular_payment_input(),
+            periodicity_combo('period_payment'),
         ], [
-            start_amount(),
-            invest_horizon(),
+            start_amount_input(),
+            invest_horizon_input(),
         ], [
-            plane_profit(),
-            periodicity('period_profit'),
+            plane_profit_input(),
+            periodicity_combo('period_profit'),
         ], [
             additional_param(),
         ]
@@ -22,13 +22,27 @@ def layout_left_invest():
 
 def layout_right_explan_invest(key, **kwargs):
     print(f'layout_right_explan_invest({key=}, {kwargs=})')
+    kwargs['initial'] = '1000000'
+    kwargs['deposit'] = '2343400'
+    kwargs['income'] = '1234250'
+    kwargs['taxes'] = '3234'
+
+
     return sg.pin(sg.Col([
         [
-            expl_title(**kwargs)
+            invest_header_output(**kwargs)
         ], [
-            # sg.T(capital,)
+            invest_leader_output(**kwargs)
+        ], [
+            invest_liner_output(key='start', **kwargs)
+        ], [
+            invest_liner_output(key='contrib', **kwargs)
+        ], [
+            invest_liner_output(key='received', **kwargs)
+        ], [
+            invest_liner_output(key='paid', **kwargs)
         ]
-    ], key=key))
+    ], key=key, **exp_both), **exp_both)
 
 
 def left_part():
@@ -50,8 +64,8 @@ def left_part():
 def right_part():
     return sg.Col([
         [sg.TabGroup([[
-            sg.Tab('Пояснения', [[sg.Col([[]], key='-BODYNOTE-', metadata=0)]], key='-NOTE-'),
-            sg.Tab('График', [[sg.Canvas(key='-CANVAS-', **cvs)]], k='-GRAPH-'),
+            sg.Tab('Пояснения', [[sg.Col([[]], key='-BODYNOTE-', metadata=0, **exp_both)]], key='-NOTE-'),
+            sg.Tab('График', [[sg.Canvas(key='-CANVAS-')]], k='-GRAPH-'),
             sg.Tab('Таблица', [], k='-TABLE-'),
         ]], k='RTAB', **rht_tabgroup)],
     ], **rht_col)
