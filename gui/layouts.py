@@ -20,13 +20,12 @@ def layout_left_invest():
     ]
 
 
-def layout_right_explan_invest(key, **kwargs):
-    print(f'layout_right_explan_invest({key=}, {kwargs=})')
+def layout_right_explan_invest(key, kwargs):
+    # print(f'layout_right_explan_invest({key=}, {kwargs=})')
     kwargs['initial'] = '1000000'
     kwargs['deposit'] = '2343400'
     kwargs['income'] = '1234250'
     kwargs['taxes'] = '3234'
-
 
     return sg.pin(sg.Col([
         [
@@ -75,8 +74,8 @@ def main_layout():
     return [
         [
             left_part(), sg.VSep(), right_part()
-        # ], [
-        #     sg.Push(),
-        #     sg.Sizegrip(),
+            # ], [
+            #     sg.Push(),
+            #     sg.Sizegrip(),
         ]
     ]

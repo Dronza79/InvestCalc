@@ -6,32 +6,22 @@ from .windows import *
 class MainView:
     def __init__(self):
         sg.theme('SystemDefault1')
+        self.event = self.value = self.stop = None
         self.window = main_window()
         self.init_build_graph()
         self.run()
 
     def run(self):
-        while True:
-            ev, val = self.window.read()
-            print(f'MainView {ev=} {val=}')
-            if ev == sg.WIN_CLOSED:
-                break
-            elif ev in ['capital', 'payment', 'initial']:
-                self.window[ev].update(value=div_to_ranks(val[ev]))
-            elif ev in ['horizon', 'rate']:
-                clear_func = clear_field_horizon if ev == 'horizon' else clear_field_percent
-                self.window[ev].update(value=clear_func(val[ev]))
-            elif ev == 'LTAB':
-                [el.update(visible=True) for el in self.window['RTAB'].Rows[0]]
-                if val['LTAB'] == '-BOND-':
-                    [el.update(visible=False) for el in self.window['RTAB'].Rows[0] if el.key != '-NOTE-']
-                elif val['LTAB'] == '-DUNNO-':
-                    [el.update(visible=False) for el in self.window['RTAB'].Rows[0] if el.key != '-TABLE-']
-                el = self.window['RTAB'].Rows[0][0]
-                if el.visible:
-                    el.select()
+        while not self.stop:
+            self.event, self.value = self.window.read()
+            print(f'MainView {self.event=} {self.value=}')
 
-            elif ev == '-GO-':
+            self.formatting_input_data()
+            self.close_window()
+            self.managing_tab_visibility()
+
+            if self.event == '-GO-':
+                self.check_rawdata()
                 outres = self.window['-BODYNOTE-']
                 if outres.metadata:
                     self.window[f'OUTRES-{outres.metadata}'].update(visible=False)
@@ -39,12 +29,51 @@ class MainView:
                 outres.metadata += 1
                 self.window.extend_layout(
                     outres,
-                    [[layout_right_explan_invest(f'OUTRES-{outres.metadata}', **val)]])
-
-
-        self.window.close()
+                    [[layout_right_explan_invest(f'OUTRES-{outres.metadata}', self.value)]])
 
     def init_build_graph(self):
         update_chart(self.window['-CANVAS-'], [[0], [0], [0]])
         self.window.refresh()
         self.window.move_to_center()
+
+    def formatting_input_data(self):
+        if self.event in ['capital', 'payment', 'initial', 'horizon', 'rate']:
+            self.window[self.event].update(background_color='white')
+            format_input = (div_to_ranks if self.event in ['capital', 'payment', 'initial'] else
+                            clear_field_horizon if self.event == 'horizon' else clear_field_percent)
+            self.window[self.event].update(value=format_input(self.value[self.event]))
+
+    def close_window(self):
+        if self.event == sg.WIN_CLOSED:
+            self.window.close()
+            self.stop = True
+
+    def managing_tab_visibility(self):
+        if self.event != 'LTAB':
+            return
+
+        visibility_map = {
+            '-INVEST-': ['-NOTE-', '-GRAPH-', '-TABLE-'],
+            '-BOND-': ['-NOTE-'],
+            '-DUNNO-': ['-TABLE-']
+        }
+
+        first_visible_tab = None
+
+        for tab in self.window['RTAB'].Rows[0]:
+            is_visible = tab.Key in visibility_map.get(self.value['LTAB'], [])
+            tab.update(visible=is_visible)
+
+            # Запоминаем первую видимую вкладку для активации
+            if is_visible and not first_visible_tab:
+                first_visible_tab = tab
+                first_visible_tab.select()
+
+    def check_rawdata(self):
+        errors = []
+        gains_capital = ['payment', 'horizon', 'rate']
+        installment = ['capital', 'horizon', 'rate']
+        time_to_goal = ['payment', 'capital', 'rate']
+        if not self.value['rate']:
+            self.window['rate'].update(background_color='Salmon')
+            errors.append('rate')

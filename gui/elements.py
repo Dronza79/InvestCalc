@@ -6,54 +6,61 @@ from .params import *
 
 
 def capital_input():
-    return sg.Frame('Желанный капитал:', [
+    key = 'capital'
+    return sg.Frame(f'{fields_input[key]}:', [
                 [
-                    sg.Input('1', key='capital', **cap_in),
+                    sg.Input('0', key=key, **cap_in),
                     sg.T('\u20BD', font='_ 20'),
                 ]
             ], **main_frame)
 
 
 def start_amount_input():
-    return sg.Frame('Начальная сумма:', [
+    key = 'initial'
+    return sg.Frame(f'{fields_input[key]}:', [
                 [
-                    sg.Input('1', key='initial', s=10, **other_in),
+                    sg.Input('0', key=key, s=10, **other_in),
                     sg.T('\u20BD'),
                 ]
             ], **main_frame)
 
 
 def regular_payment_input():
-    return sg.Frame('Регулярный платеж:', [
+    key = 'payment'
+    return sg.Frame(f'{fields_input[key]}:', [
                 [
-                    sg.Input('1', key='payment', s=10, **other_in),
+                    sg.Input('0', key=key, s=10, **other_in),
                     sg.T('\u20BD'),
                 ]
             ], **main_frame)
 
 
 def invest_horizon_input():
-    return sg.Frame('Инвест горизонт:', [
+    key = 'horizon'
+    return sg.Frame(f'{fields_input[key]}:', [
                 [
-                    sg.Input('', key='horizon', s=10, **other_in)
+                    sg.Input('', key=key, s=10, **other_in)
                 ]
             ], **main_frame)
 
 
 def plane_profit_input():
-    return sg.Frame('Плановая доходность:', [
+    key = 'rate'
+    return sg.Frame(f'{fields_input[key]}:', [
         [
-            sg.Input('', key='rate', s=8, **other_in),
+            sg.Input('', key=key, s=8, **other_in),
             sg.Text('%'),
         ]
     ], **main_frame)
 
 
 def additional_param():
+    key_1 = 'ndfl'
+    key_2 = 'inf'
     return sg.Frame('Доп параметры:', [
                 [
-                    sg.Checkbox('НДФЛ', key='ndfl', **chbx),
-                    sg.Checkbox('Инфляция', key='inf', **chbx),
+                    sg.Checkbox(f'{fields_input[key_1]}', key=key_1, **chbx),
+                    sg.Checkbox(f'{fields_input[key_2]}:', key=key_2, **chbx),
                     sg.Frame('Кратность:', [[
                         sg.Combo(['100', '500', '1000'], default_value=500, k='ratio', **combo_per)
                     ]])

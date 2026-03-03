@@ -72,8 +72,14 @@ def clear_field_horizon(string: str):
             if input_date <= today:
                 return string[:-1]
         except ValueError:
-            # Если дата не существует блокирую ввод
+            # Если дата не существует блокировать ввод
             return string[:-1]
 
     return string
 
+
+def reformat_raw_input_data(raw_data):
+    if raw_data.get('LTAB') == '-INVEST-':
+        return {
+            'type': 'capital_gains'
+        }
