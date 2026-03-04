@@ -1,4 +1,4 @@
-from core.utilites import div_to_ranks, clear_field_horizon, clear_field_percent
+from core.utilites import div_to_ranks, clear_field_horizon, clear_field_percent, reformat_raw_input_data
 from .models import update_chart
 from .windows import *
 
@@ -14,22 +14,30 @@ class MainView:
     def run(self):
         while not self.stop:
             self.event, self.value = self.window.read()
-            print(f'MainView {self.event=} {self.value=}')
+            # print(f'MainView {self.event=} {self.value=}')
 
             self.formatting_input_data()
             self.close_window()
             self.managing_tab_visibility()
 
-            if self.event == '-GO-':
-                self.check_rawdata()
-                outres = self.window['-BODYNOTE-']
-                if outres.metadata:
-                    self.window[f'OUTRES-{outres.metadata}'].update(visible=False)
+            if self.event in ['-GO-', '\r']:
+                if check_data := self.check_fullness_raw_data():
+                    sg.popup_error('Расчет не возможен', 'не заполнены поля:', *check_data)
+                    continue
+                valid_data = reformat_raw_input_data(**self.value)
+                print(f'{valid_data=}')
 
-                outres.metadata += 1
-                self.window.extend_layout(
-                    outres,
-                    [[layout_right_explan_invest(f'OUTRES-{outres.metadata}', self.value)]])
+                outres = self.window['-BODYNOTE-']
+                # if outres.metadata:
+                #     self.window[f'OUTRES-{outres.metadata}'].update(visible=False)
+                #
+                # outres.metadata += 1
+                # self.window.extend_layout(
+                #     outres,
+                #     [[layout_right_explan_invest(f'OUTRES-{outres.metadata}', self.value)]])
+
+            elif self.event in ['-CLR-', 'Delete:46']:
+                [self.window[val].update('') for val in fields_input]
 
     def init_build_graph(self):
         update_chart(self.window['-CANVAS-'], [[0], [0], [0]])
@@ -69,11 +77,22 @@ class MainView:
                 first_visible_tab = tab
                 first_visible_tab.select()
 
-    def check_rawdata(self):
-        errors = []
-        gains_capital = ['payment', 'horizon', 'rate']
-        installment = ['capital', 'horizon', 'rate']
-        time_to_goal = ['payment', 'capital', 'rate']
-        if not self.value['rate']:
-            self.window['rate'].update(background_color='Salmon')
-            errors.append('rate')
+    def check_fullness_raw_data(self):
+        errors = set()
+        type_calc = {
+            'gains_capital': ['payment', 'horizon', 'rate'],
+            'installment': ['capital', 'horizon', 'rate'],
+            'time_to_goal': ['payment', 'capital', 'rate'],
+        }
+
+        for name, group in type_calc.items():
+            if all(self.value[x] for x in group):
+                self.value['type_calc'] = name
+                return
+
+            for val in group:
+                if not self.value[val]:
+                    errors.add((val, fields_input[val],))
+        for val in errors:
+            self.window[val[0]].update(background_color='Salmon')
+        return [error[1] for error in errors]

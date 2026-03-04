@@ -9,7 +9,7 @@ def capital_input():
     key = 'capital'
     return sg.Frame(f'{fields_input[key]}:', [
                 [
-                    sg.Input('0', key=key, **cap_in),
+                    sg.Input('', key=key, **cap_in),
                     sg.T('\u20BD', font='_ 20'),
                 ]
             ], **main_frame)
@@ -19,7 +19,7 @@ def start_amount_input():
     key = 'initial'
     return sg.Frame(f'{fields_input[key]}:', [
                 [
-                    sg.Input('0', key=key, s=10, **other_in),
+                    sg.Input('', key=key, s=10, **other_in),
                     sg.T('\u20BD'),
                 ]
             ], **main_frame)
@@ -29,7 +29,7 @@ def regular_payment_input():
     key = 'payment'
     return sg.Frame(f'{fields_input[key]}:', [
                 [
-                    sg.Input('0', key=key, s=10, **other_in),
+                    sg.Input('', key=key, s=10, **other_in),
                     sg.T('\u20BD'),
                 ]
             ], **main_frame)
@@ -69,10 +69,11 @@ def additional_param():
 
 
 def periodicity_combo(key):
-    list_period = Period.glp()
+    list_period = Period.glp(key)
     return sg.Frame('Периодичность:', [
                 [
-                    sg.Combo(list_period, default_value=list_period[1], key=key,  **combo_per),
+                    sg.Combo(list_period, default_value=list_period[1] if key != 'profit' else list_period[0],
+                             key=f'period_{key}',  **combo_per),
                 ]
             ],  **main_frame)
 
@@ -80,7 +81,7 @@ def periodicity_combo(key):
 def invest_header_output(period_payment, payment='0', horizon='0', **kwargs):
     # print(f'{kwargs=}')
     param = {'font': 'Courier 20', 'pad': (5, 0)}
-    if not horizon: horizon = 0
+    # if not horizon: horizon = 0
     return sg.Col([
         [
             sg.Text('Откладывая по', **param),
@@ -98,7 +99,7 @@ def invest_header_output(period_payment, payment='0', horizon='0', **kwargs):
 def invest_leader_output(capital: str, **kwargs):
     # print(f'{kwargs=}')
     param = {'font': 'Courier 50 bold', 'pad': (5, 0)} # 'background_color': 'red'}
-    if not capital: capital = 0
+    # if not capital: capital = 0
     return sg.Col([
         [
             sg.Text(div_to_ranks(capital), **param),

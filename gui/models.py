@@ -5,6 +5,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class Period:
     __ADDICTION = {
+        'ежедневно': 365,
         'еженедельно': 52,
         'ежемесячно': 12,
         'ежеквартально': 4,
@@ -24,12 +25,15 @@ class Period:
         return self.__value
 
     @classmethod
-    def glp(cls):
+    def glp(cls, key):
         """
         glp = get list periods
         :return:
         """
-        return [cls(k, v) for k, v in cls.__ADDICTION.items()]
+        return (
+            [cls(k, v) for k, v in cls.__ADDICTION.items() if k != 'еженедельно'] if key == 'profit' else
+            [cls(k, v) for k, v in cls.__ADDICTION.items() if k != 'ежедневно']
+        )
 
 
 # --- Функции для работы с графиком ---
@@ -63,7 +67,6 @@ def update_chart(canvas_elem, data_list):
     fig, ax = plt.subplots(figsize=(8, 7), dpi=100)
 
     # Оформление внешнего вида графика
-    ax.legend(loc='upper right')
     ax.grid(True, axis='both', linestyle=':', alpha=0.7)
     ax.margins(x=0)
     ax.ticklabel_format(style='plain', axis='y')
@@ -86,6 +89,7 @@ def update_chart(canvas_elem, data_list):
 
     # Построение самого графика
     ax.stackplot(*data_list, labels=['Внесено', "Сложный процент"])
+    ax.legend(loc='upper right')
 
     # Оформление значений на графике
     create_inscriptions_value(ax, data_list)

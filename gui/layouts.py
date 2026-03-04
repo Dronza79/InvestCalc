@@ -7,13 +7,13 @@ def layout_left_invest():
             capital_input(),
         ], [
             regular_payment_input(),
-            periodicity_combo('period_payment'),
+            periodicity_combo('payment'),
         ], [
             start_amount_input(),
             invest_horizon_input(),
         ], [
             plane_profit_input(),
-            periodicity_combo('period_profit'),
+            periodicity_combo('profit'),
         ], [
             additional_param(),
         ]
@@ -41,7 +41,7 @@ def layout_right_explan_invest(key, kwargs):
         ], [
             invest_liner_output(key='paid', **kwargs)
         ]
-    ], key=key, **exp_both), **exp_both)
+    ], key=key, **exp_both))
 
 
 def left_part():

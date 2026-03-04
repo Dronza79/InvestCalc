@@ -1,6 +1,10 @@
 import re
 from datetime import datetime as dd
 
+from dateutil.relativedelta import relativedelta
+
+from gui.models import Period
+
 
 def clear_field_digits(string):
     return re.sub(r'\D', '', string)
@@ -78,8 +82,37 @@ def clear_field_horizon(string: str):
     return string
 
 
-def reformat_raw_input_data(raw_data):
-    if raw_data.get('LTAB') == '-INVEST-':
-        return {
-            'type': 'capital_gains'
-        }
+def reformat_raw_input_data(
+        horizon: str, period_payment: Period, period_profit: Period, rate: str,
+        ratio: str, type_calc: str, ndfl: bool, inf: bool, **raw_data
+):
+
+    valid_data = {
+        'period_payment': period_payment.value,
+        'period_profit': period_profit.value,
+        'rate': float(rate.replace(',', '.')),
+        'ratio': int(ratio),
+        'type_calc': type_calc,
+        'ndfl': ndfl,
+        'inf': inf,
+    }
+
+    for key in ['capital', 'payment', 'initial']:
+        if raw_data[key]:
+            valid_data[key] = int(raw_data[key].replace(' ', ''))
+
+    if horizon:
+        start_date = dd.now().date()
+        try:
+            end_date = dd.strptime(horizon, '%d.%m.%Y').date()
+            horizon = relativedelta(end_date, start_date)
+        except ValueError:
+            y = float(horizon.replace(',', '.'))
+            m = (y - int(y)) * 12
+            d = (m - int(m)) * 30.44
+            horizon = relativedelta(years=int(y), months=int(m), days=int(d))
+            end_date = start_date + horizon
+        for key, data in {'horizon': horizon, 'start_date': start_date, 'end_date': end_date}.items():
+            valid_data[key] = data
+
+    return valid_data

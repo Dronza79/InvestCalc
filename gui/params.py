@@ -34,7 +34,7 @@ main_win_param = {
     # auto_close_duration: int = DEFAULT_AUTOCLOSE_TIME,
     # force_toplevel: bool = False,
     # alpha_channel: float = None,
-    # return_keyboard_events: bool = False,
+    'return_keyboard_events': True,
     # use_default_focus: bool = True,
     # text_justification: Any = None,
     # 'no_titlebar': True,
