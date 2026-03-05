@@ -6,8 +6,8 @@ fields_input = {
     'initial': 'Начальная сумма',
     'horizon': 'Инвест горизонт',
     'rate': 'Годовая доходность',
-    'ndfl': 'НДФЛ',
-    'inf': 'Инфляция',
+    'tax_enabled': 'Налоги',
+    'inf_enabled': 'Инфляция',
 }
 
 main_win_param = {

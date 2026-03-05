@@ -1,16 +1,17 @@
 import matplotlib.pyplot as plt
+from dateutil.relativedelta import relativedelta
 from matplotlib import ticker
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 class Period:
     __ADDICTION = {
-        'ежедневно': 365,
-        'еженедельно': 52,
-        'ежемесячно': 12,
-        'ежеквартально': 4,
-        'полугодично': 2,
-        'ежегодно': 1,
+        'ежедневно': relativedelta(days=1),
+        'еженедельно': relativedelta(weeks=1),
+        'ежемесячно': relativedelta(months=1),
+        'поквартально': relativedelta(months=3),
+        'полугодично': relativedelta(months=6),
+        'ежегодно': relativedelta(years=1),
     }
 
     def __init__(self, name, value):
@@ -21,11 +22,11 @@ class Period:
         return self.__name
 
     @property
-    def value(self):
+    def duration(self):
         return self.__value
 
     @classmethod
-    def glp(cls, key):
+    def glp(cls, key=''):
         """
         glp = get list periods
         :return:

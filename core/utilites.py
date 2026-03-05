@@ -1,5 +1,5 @@
 import re
-from datetime import datetime as dd
+from datetime import datetime as dd, date
 
 from dateutil.relativedelta import relativedelta
 
@@ -83,18 +83,18 @@ def clear_field_horizon(string: str):
 
 
 def reformat_raw_input_data(
-        horizon: str, period_payment: Period, period_profit: Period, rate: str,
-        ratio: str, type_calc: str, ndfl: bool, inf: bool, **raw_data
+        horizon: str, payment_step: Period, profit_step: Period, rate: str,
+        ratio: str, type_calc: str, tax_enabled: bool, inf_enabled: bool, **raw_data
 ):
 
     valid_data = {
-        'period_payment': period_payment.value,
-        'period_profit': period_profit.value,
+        'payment_step': payment_step.duration,
+        'profit_step': profit_step.duration,
         'rate': float(rate.replace(',', '.')),
         'ratio': int(ratio),
         'type_calc': type_calc,
-        'ndfl': ndfl,
-        'inf': inf,
+        'tax_enabled': tax_enabled,
+        'inf_enabled': inf_enabled,
     }
 
     for key in ['capital', 'payment', 'initial']:
@@ -116,3 +116,12 @@ def reformat_raw_input_data(
             valid_data[key] = data
 
     return valid_data
+
+
+def check_for_day_week(date_value):
+    week_day = date_value.weekday()
+    return (
+        date_value if week_day < 5 else
+        date_value + relativedelta(days=1) if week_day > 5 else
+        date_value + relativedelta(days=2)
+    )
