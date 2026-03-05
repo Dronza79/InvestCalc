@@ -55,7 +55,7 @@ def additional_param():
         ]]),
         sg.Push(),
         sg.Frame('Кратность:', [[
-            sg.Combo(['100', '500', '1000'], default_value=500, k='ratio', **combo_per)
+            sg.Combo(['1', '100', '500', '1000'], default_value=500, k='ratio', **combo_per)
         ]])
     ]], **main_frame)
 
@@ -71,11 +71,11 @@ def periodicity_combo(key):
     ]], **main_frame)
 
 
-def invest_header_output(period_payment, payment='0', horizon='0', **kwargs):
+def invest_header_output(period_payment, payment, horizon, **kwargs):
     param = {'font': 'Courier 20', 'pad': (5, 0)}
     return sg.Col([[
         sg.Text('Откладывая по', **param),
-        sg.Text(div_to_ranks(payment), **param),
+        sg.Text(div_to_ranks(str(payment)), **param),
         sg.T('\u20BD', **param),
         sg.T(period_payment, **param)
     ], [
@@ -85,10 +85,10 @@ def invest_header_output(period_payment, payment='0', horizon='0', **kwargs):
     ]], expand_x=True, element_justification='c', pad=20)
 
 
-def invest_leader_output(capital: str, **kwargs):
+def invest_leader_output(capital_gans, **kwargs):
     param = {'font': 'Courier 50 bold', 'pad': (5, 0)}
     return sg.Col([[
-        sg.Text(div_to_ranks(capital), **param),
+        sg.Text(div_to_ranks(str(capital_gans)), **param),
         sg.T('\u20BD', **param),
     ]], expand_x=True, element_justification='c', pad=10)
 
@@ -98,12 +98,13 @@ def invest_liner_output(key, **kwargs):
     ADD = {
         'start': ('initial', 'Начальная сумма:'),
         'contrib': ('deposit', 'Сумма пополнений:'),
-        'received': ('income', 'Ожидаемый доход:'),
-        'paid': ('taxes', 'Уплачено налогов:'),
+        'received': ('income', 'Полученный доход:'),
+        'paid': ('total_taxes', 'Уплачено налогов:'),
+        'inf': ('inflation', 'Инфляция:'),
 
     }
     return sg.Col([[
-        sg.Text(f'{ADD[key][1]:.<40}', **param),
+        sg.Text(f'{ADD[key][1]:.<35}', **param),
         # sg.Push(),
         sg.Text(div_to_ranks(kwargs[ADD[key][0]]), **param),
         sg.T('\u20BD', **param),

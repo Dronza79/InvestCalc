@@ -1,3 +1,4 @@
+from core.processor import calculations
 from core.utilites import div_to_ranks, clear_field_horizon, clear_field_percent, reformat_raw_input_data
 from .models import update_chart
 from .windows import *
@@ -25,16 +26,19 @@ class MainView:
                     sg.popup_error('Расчет не возможен', 'не заполнены поля:', *check_data)
                     continue
                 valid_data = reformat_raw_input_data(**self.value)
-                print(f'{valid_data=}')
+                result = calculations(**valid_data)
+                print(f'{result=}')
 
                 outres = self.window['-BODYNOTE-']
-                # if outres.metadata:
-                #     self.window[f'OUTRES-{outres.metadata}'].update(visible=False)
-                #
-                # outres.metadata += 1
-                # self.window.extend_layout(
-                #     outres,
-                #     [[layout_right_explan_invest(f'OUTRES-{outres.metadata}', self.value)]])
+                if outres.metadata:
+                    self.window[f'OUTRES-{outres.metadata}'].update(visible=False)
+
+                outres.metadata += 1
+                self.window.extend_layout(
+                    outres,
+                    [[layout_right_explan_invest(f'OUTRES-{outres.metadata}', result)]])
+
+                update_chart(self.window['-CANVAS-'], result['graph_data'])
 
             elif self.event in ['-CLR-', 'Delete:46']:
                 [self.window[val].update('') for val in fields_input]

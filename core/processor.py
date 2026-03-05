@@ -86,266 +86,112 @@ valid_data={
 """
 
 
-# def get_gans_capital(
-#         payment, initial, period_payment,
-#         period_profit, rate, ndfl, inf,
-#         horizon: relativedelta, **kwargs
-# ):
-#     initial = initial if initial else 0
-#     periodic_rate = rate / (period_profit * 100)
-#     amount_days = int(round(horizon.years * 365 + horizon.months * 30.44 + horizon.days, 0))
-#     amount_payment = amount_days / 365 * period_payment
-#     gans_capital = initial
-#     for _ in range(1, int(amount_payment + 1)):
-#         for _ in range()
-
-
 def get_gans_capital(
-        start_date, end_date, initial, payment, payment_step,
-        profit_step, tax_enabled, inf_enabled, ratio, rate,
+        start_date, end_date, initial, payment, period_payment,
+        tax_enabled, inf_enabled, ratio, rate, period_profit,
         horizon: relativedelta, **kwargs
 ):
+    payment_step = period_payment.duration
+    profit_step = period_profit.duration
+    current_capital = initial
+    daily_rate = rate / 100 / 365
 
-    current_capital = total_invested = initial
-    rate = rate / 100
-
+    # Инициализация дат событий
     next_payment_date = check_for_day_week(start_date + payment_step)
     next_profit_date = check_for_day_week(start_date + profit_step)
+    last_profit_date = start_date
 
-    # Статистика
+    total_invested = initial
     total_interest_earned = 0
     total_taxes_paid = 0
+    annual_profit_for_tax = 0
 
-    # Данные для графиков (годовые срезы)
+    # Статистика для графиков (0-й год)
     years_list = [0]
-    invested_list = [0]
+    invested_list = [initial]
     interest_list = [0]
-    data_table_list = []
+
+    payment_registry = []
+    payment_counter = 0
 
     current_date = start_date
-    annual_profit_for_tax = 0
-    last_profit_calc_date = start_date
-    year_counter = 0
+    while current_date <= end_date:
+        # 1. Начисление процентов (экспоненциально за период)
+        is_tax_day = (current_date.month == 12 and current_date.day == 31)
 
-    while current_date < end_date:
-        # 1. Начисление процентов
-        if current_date == next_profit_date:
-            days_in_period = (next_profit_date - last_profit_calc_date).days
-            profit = current_capital * (rate * days_in_period / 365)
+        if current_date == next_profit_date or is_tax_day or current_date == end_date:
+            days_passed = (current_date - last_profit_date).days
+            if days_passed > 0:
+                profit = current_capital * ((1 + daily_rate) ** days_passed - 1)
+                current_capital += profit
+                total_interest_earned += profit
+                annual_profit_for_tax += profit
+                last_profit_date = current_date
 
-            current_capital += profit
-            total_interest_earned += profit
-            annual_profit_for_tax += profit
-
-            last_profit_calc_date = next_profit_date
-            next_profit_date = check_for_day_week(next_profit_date + profit_step)
+            if current_date == next_profit_date:
+                next_profit_date = check_for_day_week(current_date + profit_step)
 
         # 2. Регулярный платеж
         if current_date == next_payment_date:
+            payment_counter += 1
             current_capital += payment
             total_invested += payment
-            next_payment_date = check_for_day_week(next_payment_date + payment_step)
 
-        # 3. Налоги (31 декабря) и сбор ежегодной статистики
-        if (current_date.month == 12 and current_date.day == 31) or current_date == end_date:
-            # Расчет НДФЛ
+            payment_registry.append([
+                payment_counter, current_date, round(total_invested, 2),
+                round(total_interest_earned, 2), round(current_capital, 2)
+            ])
+            next_payment_date = check_for_day_week(current_date + payment_step)
+
+        # 3. Налоги (31 декабря) и фиксация годовой статистики
+        if is_tax_day or current_date == end_date:
             if tax_enabled and annual_profit_for_tax > 0:
                 if annual_profit_for_tax <= 2400000:
                     tax = annual_profit_for_tax * 0.13
                 else:
-                    tax = (2400000 * 0.13) + (annual_profit_for_tax - 2400000) * 0.15
+                    tax = (2.4e6 * 0.13) + (annual_profit_for_tax - 2.4e6) * 0.15
                 current_capital -= tax
                 total_taxes_paid += tax
 
             annual_profit_for_tax = 0
-            year_counter += 1
 
-            # Запись данных для графика
-            years_list.append(year_counter)
-            invested_list.append(total_invested)
-            interest_list.append(round(total_interest_earned, 2))
+            # Заполнение данных для графика
+            diff = relativedelta(current_date, start_date)
+            current_year_num = diff.years
+            if current_year_num > 0 and current_year_num not in years_list:
+                years_list.append(current_year_num)
+                invested_list.append(round(total_invested, 2))
+                interest_list.append(round(total_interest_earned, 2))
 
-        current_date += relativedelta(days=1)
+        current_date += datetime.timedelta(days=1)
 
-    # Итоговые расчеты
-    total_years = (end_date - start_date).days / 365.25
-    inf_rate = 0.08 if inf_enabled else 0.0
-    real_wealth = current_capital / ((1 + inf_rate) ** total_years)
+    # 4. Расчет инфляции через точный горизонт (horizon)
+    exact_years = horizon.years + (horizon.months / 12.0) + (horizon.days / 365.25)
+    real_wealth = current_capital / (1.08 ** exact_years) if inf_enabled else current_capital
+    inflation = current_capital - real_wealth
 
-    return {
-        "capital_nominal": (current_capital // ratio) * ratio,      # Итоговый капитал
-        "capital_real": (real_wealth // ratio) * ratio,             # Капитал с учетом инфляции
-        "total_taxes": round(total_taxes_paid, 2),                  # Итоговые налоги
-        "total_income": round(total_interest_earned, 2),            # Итоговый доход
-        "total_invested": total_invested,                           # Внесено средств
-        "graph_data": [years_list, invested_list, interest_list]    # Данные для графика и таблицы
+    result = {
+        "capital_gans": round((current_capital // ratio) * ratio, 2),  # Итоговый капитал
+        "capital_inflat": round((real_wealth // ratio) * ratio, 2),  # Капитал с инфляцией
+        "inflation": round((inflation // ratio) * ratio, 2),  # Капитал с инфляцией
+        "total_taxes": round(total_taxes_paid, 2),  # Итого налоги
+        "income": round(total_interest_earned, 2),  # Доход сложного процента
+        "deposit": round(total_invested - initial, 2),  # Инвестировано
+        "graph_data": [years_list, invested_list, interest_list],  # Данные для Графика
+        "table_data": payment_registry,  # Данные для Таблицы
+        'start_date': start_date,
+        'end_date': end_date,
+        'horizon': horizon,
+        'payment': payment,
+        'period_payment': period_payment,
+        'initial': initial,
+        'tax_enabled': tax_enabled,
+        'inf_enabled': inf_enabled,
     }
 
-    # Настройки
-    # params = {
-    #     'period_payment': relativedelta(months=1),
-    #     'period_profit': relativedelta(days=1),
-    #     'rate': 11.5,
-    #     'ratio': 500,
-    #     'ndfl': True,
-    #     'inf': True,
-    #     'payment': 15000,
-    #     'initial': 50000,
-    #     'start_date': datetime.date(2026, 3, 4),
-    #     'end_date': datetime.date(2041, 9, 21)
-    # }
-
-    # res = calculate_investment_full_stats(params)
-    #
-    # print(f"Полученный капитал: {res['capital_nominal']:,}")
-    # print(f"С учетом инфляции: {res['capital_real']:,}")
-    # print(f"Уплачено налогов: {res['total_taxes']:,}")
-    # print(f"Доход от процентов: {res['total_interest']:,}")
-    # print(f"Внесено средств: {res['total_invested']:,}")
-    # print(f"Данные для графика: {res['chart_data']}")
-    #
+    return {**result, **kwargs}
 
 
-def get_value_graph(payment, month, annual_rate, capital):
-    rate = annual_rate / 1200
-    for i in range(1, month + 1):
-        yield {
-            'month': i,
-            'all_payment': payment * i,
-            'sum_capital': int(payment * (((1 + rate) ** i - 1) / rate)),
-            'capital': capital
-        }
-
-
-# def calculations(type_calc, capital, **kwargs):
-#     if type_calc == 'gains_capital':
-#         return get_gans_capital(**kwargs)
-
-
-# import datetime
-# from dateutil.relativedelta import relativedelta
-#
-#
-# def calculate_investment_ultimate(params):
-#     start_date = params['start_date']
-#     end_date = params['end_date']
-#     current_capital = params['initial']
-#     payment = params['payment']
-#     rate = params['rate'] / 100
-#     ratio = params['ratio']
-#
-#     # Вспомогательная функция переноса на будний день
-#     def adjust_to_weekday(d):
-#         if d.weekday() == 5: return d + datetime.timedelta(days=2)  # Сб -> Пн
-#         if d.weekday() == 6: return d + datetime.timedelta(days=1)  # Вс -> Пн
-#         return d
-#
-#     # Инициализация дат событий
-#     next_payment_date = adjust_to_weekday(start_date + params['period_payment'])
-#     next_profit_date = adjust_to_weekday(start_date + params['period_profit'])
-#
-#     # Счётчики
-#     total_invested = params['initial']
-#     total_interest_earned = 0
-#     total_taxes_paid = 0
-#     annual_profit_for_tax = 0
-#     last_profit_calc_date = start_date
-#
-#     # Списки для графиков (по годам)
-#     years_list, invested_list, interest_list = [0], [params['initial']], [0.0]
-#
-#     # Реестр платежей (список списков)
-#     payment_registry = []
-#     payment_counter = 0
-#
-#     current_date = start_date
-#     while current_date < end_date:
-#         # 1. Начисление процентов
-#         if current_date == next_profit_date:
-#             days_in_period = (next_profit_date - last_profit_calc_date).days
-#             profit = current_capital * (rate * days_in_period / 365)
-#
-#             current_capital += profit
-#             total_interest_earned += profit
-#             annual_profit_for_tax += profit
-#
-#             last_profit_calc_date = next_profit_date
-#             next_profit_date = adjust_to_weekday(next_profit_date + params['period_profit'])
-#
-#         # 2. Регулярный платеж + запись в реестр
-#         if current_date == next_payment_date:
-#             payment_counter += 1
-#             current_capital += payment
-#             total_invested += payment
-#
-#             # Запись: [№, Дата, Сумма вложений, Доход на текущий момент, Весь капитал]
-#             payment_registry.append([
-#                 payment_counter,
-#                 current_date,
-#                 round(total_invested, 2),
-#                 round(total_interest_earned, 2),
-#                 round(current_capital, 2)
-#             ])
-#
-#             next_payment_date = adjust_to_weekday(next_payment_date + params['period_payment'])
-#
-#         # 3. Налоги и годовая статистика (31 декабря)
-#         if (current_date.month == 12 and current_date.day == 31) or current_date == end_date:
-#             if params['ndfl'] and annual_profit_for_tax > 0:
-#                 if annual_profit_for_tax <= 2400000:
-#                     tax = annual_profit_for_tax * 0.13
-#                 else:
-#                     tax = (2400000 * 0.13) + (annual_profit_for_tax - 2400000) * 0.15
-#                 current_capital -= tax
-#                 total_taxes_paid += tax
-#
-#             annual_profit_for_tax = 0
-#
-#             # Данные для графика
-#             years_passed = (current_date - start_date).days // 365
-#             if years_passed not in years_list:
-#                 years_list.append(years_passed)
-#                 invested_list.append(round(total_invested, 2))
-#                 interest_list.append(round(total_interest_earned, 2))
-#
-#         current_date += datetime.timedelta(days=1)
-#
-#     # Итоговые расчеты
-#     total_years = (end_date - start_date).days / 365.25
-#     inf_rate = 0.08 if params['inf'] else 0.0
-#     real_wealth = current_capital / ((1 + inf_rate) ** total_years)
-#
-#     return {
-#         "final_capital": (current_capital // ratio) * ratio,
-#         "real_capital": (real_wealth // ratio) * ratio,
-#         "total_taxes": round(total_taxes_paid, 2),
-#         "total_interest": round(total_interest_earned, 2),
-#         "total_invested": total_invested,
-#         "chart_data": [years_list, invested_list, interest_list],
-#         "payment_registry": payment_registry
-#     }
-#
-#
-# # --- Параметры из запроса ---
-# params = {
-#     'period_payment': relativedelta(months=1),
-#     'period_profit': relativedelta(days=1),
-#     'rate': 11.5,
-#     'ratio': 500,
-#     'ndfl': True,
-#     'inf': True,
-#     'payment': 15000,
-#     'initial': 50000,
-#     'start_date': datetime.date(2026, 3, 4),
-#     'end_date': datetime.date(2041, 9, 21)
-# }
-#
-# res = calculate_investment_ultimate(params)
-#
-# # Вывод результатов
-# print(f"Капитал: {res['final_capital']:,} | Реальный: {res['real_capital']:,}")
-# print(f"Налоги: {res['total_taxes']:,} | Проценты: {res['total_interest']:,}")
-# print("-" * 30)
-# print("Первые 3 записи реестра платежей:")
-# for row in res['payment_registry'][:3]:
-#     print(row)
+def calculations(type_calc, **kwargs):
+    if type_calc == 'gains_capital':
+        return get_gans_capital(**kwargs)

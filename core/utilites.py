@@ -7,7 +7,7 @@ from gui.models import Period
 
 
 def clear_field_digits(string):
-    return re.sub(r'\D', '', string)
+    return re.sub(r'[^\d.,]', '', str(string)).replace('.', ',')
 
 
 def div_to_ranks(string):
@@ -27,13 +27,23 @@ def format_digit_years(digit):  # Именительный подеж
     return f'{digit} лет'
 
 
-def format_years_genitive(digit):
-    print(f'{digit=}')
-    num = int(float(str(digit).replace(',', '.')))
-    digit = str(digit).replace('.', ',')
-    if num % 10 == 1 and num % 100 != 11:
-        return f'{digit} года'
-    return f'{digit} лет'
+# def format_years_genitive(digit):
+#     print(f'{digit=}')
+#     num = int(float(str(digit).replace(',', '.')))
+#     digit = str(digit).replace('.', ',')
+#     if num % 10 == 1 and num % 100 != 11:
+#         return f'{digit} года'
+#     return f'{digit} лет'
+def format_years_genitive(horizon):
+    string = f'{horizon.years} лет'
+
+    if horizon.years % 10 == 1 and horizon.years % 100 != 11:
+        string = f'{horizon.years} года'
+
+    if horizon.months:
+        string += f' {horizon.months} месяцев'
+
+    return string
 
 
 def clear_field_percent(string: str):
@@ -88,8 +98,8 @@ def reformat_raw_input_data(
 ):
 
     valid_data = {
-        'payment_step': payment_step.duration,
-        'profit_step': profit_step.duration,
+        'period_payment': payment_step,
+        'period_profit': profit_step,
         'rate': float(rate.replace(',', '.')),
         'ratio': int(ratio),
         'type_calc': type_calc,
@@ -98,8 +108,7 @@ def reformat_raw_input_data(
     }
 
     for key in ['capital', 'payment', 'initial']:
-        if raw_data[key]:
-            valid_data[key] = int(raw_data[key].replace(' ', ''))
+        valid_data[key] = round(float(raw_data[key].replace(' ', '').replace(',', '.')), 2) if raw_data[key] else 0
 
     if horizon:
         start_date = dd.now().date()

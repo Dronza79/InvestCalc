@@ -20,24 +20,17 @@ def layout_left_invest():
 
 def layout_right_explan_invest(key, kwargs):
     # print(f'layout_right_explan_invest({key=}, {kwargs=})')
-    kwargs['initial'] = '1000000'
-    kwargs['deposit'] = '2343400'
-    kwargs['income'] = '1234250'
-    kwargs['taxes'] = '3234'
 
-    return sg.pin(sg.Col([[
-            invest_header_output(**kwargs)
-        ], [
-            invest_leader_output(**kwargs)
-        ], [
-            invest_liner_output(key='start', **kwargs)
-        ], [
-            invest_liner_output(key='contrib', **kwargs)
-        ], [
-            invest_liner_output(key='received', **kwargs)
-        ], [
-            invest_liner_output(key='paid', **kwargs)
-        ]], key=key, **exp_both))
+    layout = [[invest_header_output(**kwargs)], [invest_leader_output(**kwargs)]]
+    if kwargs.get('initial'):
+        layout += [[invest_liner_output(key='start', **kwargs)]]
+    layout += [[invest_liner_output(key='contrib', **kwargs)], [invest_liner_output(key='received', **kwargs)]]
+    if kwargs.get('tax_enabled'):
+        layout += [[invest_liner_output(key='paid', **kwargs)]]
+    if kwargs.get('inf_enabled'):
+        layout += [[invest_liner_output(key='inf', **kwargs)]]
+
+    return sg.pin(sg.Col(layout, key=key, **exp_both))
 
 
 def left_part():
