@@ -17,13 +17,13 @@ fields_input = {
 }
 
 key_input_format_money = [
-    'capital', 'payment', 'initial', 'balance_capital', 'stocks', 'bonds', 'funds', 'metals'
+    'capital', 'payment', 'initial', 'balance_capital',
+    'stocks', 'bonds', 'funds', 'metals', 'partial_repl'
 ]
 
 key_input_format_percent = [
-    'horizon', 'rate',
-    'percent_stocks', 'percent_bonds', 'percent_funds',
-    'percent_metals'
+    'rate', 'percent_stocks', 'percent_bonds',
+    'percent_funds', 'percent_metals', 'horizon'
 ]
 
 key_input_format = key_input_format_money + key_input_format_percent

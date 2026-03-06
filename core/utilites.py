@@ -27,13 +27,6 @@ def format_digit_years(digit):  # Именительный подеж
     return f'{digit} лет'
 
 
-# def format_years_genitive(digit):
-#     print(f'{digit=}')
-#     num = int(float(str(digit).replace(',', '.')))
-#     digit = str(digit).replace('.', ',')
-#     if num % 10 == 1 and num % 100 != 11:
-#         return f'{digit} года'
-#     return f'{digit} лет'
 def format_years_genitive(horizon):
     string = f'{horizon.years} лет'
 
@@ -47,15 +40,15 @@ def format_years_genitive(horizon):
 
 
 def clear_field_percent(string: str):
-    string = re.sub(r'[^\d.,]', '', string.replace('.', ','))
+    string = re.sub(r'[^\d.,]', '', str(string).replace('.', ','))
 
-    if re.fullmatch(r'\d{0,3}(?:,\d{0,3})?', string):
+    if re.fullmatch(r'\d{0,2}(?:,\d{0,2})?', string):
         return string
     return string[:-1]
 
 
 def clear_field_horizon(string: str):
-    string = re.sub(r'[^\d.,]', '', string)
+    string = re.sub(r'[^\d.,]', '', str(string))
     count_sep = string.count('.') + string.count(',')
     string = (
         string.replace(',', '.') if count_sep > 1 else
@@ -66,7 +59,7 @@ def clear_field_horizon(string: str):
     month_p = r'(?:0[1-9]|1[0-2]|[1-9])'
     year_p = r'(?:2(?:0(?:[2-9]\d?)?)?)'
     number = r'(?:\d|[1-4]\d)'
-    dec = r'\d{0,3}'
+    dec = r'\d{0,2}'
 
     valid_states = [
         fr'^(?:{number}|50)$',
@@ -94,35 +87,50 @@ def clear_field_horizon(string: str):
 
 def reformat_raw_input_data(
         horizon: str, payment_step: Period, profit_step: Period, rate: str,
-        ratio: str, type_calc: str, tax_enabled: bool, inf_enabled: bool, **raw_data
+        ratio: str, type_calc: str, tax_enabled: bool, inf_enabled: bool,
+        ltab, pay_enabled, **raw_data
 ):
+    valid_data = {}
+    field_money_input = []
 
-    valid_data = {
-        'period_payment': payment_step,
-        'period_profit': profit_step,
-        'rate': float(rate.replace(',', '.')),
-        'ratio': int(ratio),
-        'type_calc': type_calc,
-        'tax_enabled': tax_enabled,
-        'inf_enabled': inf_enabled,
-    }
+    if ltab == '-INVEST-':
+        field_money_input = ['capital', 'payment', 'initial']
+        valid_data = {
+            'period_payment': payment_step,
+            'period_profit': profit_step,
+            'rate': float(rate.replace(',', '.')),
+            'ratio': int(ratio),
+            'tax_enabled': tax_enabled,
+            'inf_enabled': inf_enabled,
+        }
 
-    for key in ['capital', 'payment', 'initial']:
+        if horizon:
+            start_date = dd.now().date()
+            try:
+                end_date = dd.strptime(horizon, '%d.%m.%Y').date()
+                horizon = relativedelta(end_date, start_date)
+            except ValueError:
+                y = float(horizon.replace(',', '.'))
+                m = (y - int(y)) * 12
+                d = (m - int(m)) * 30.44
+                horizon = relativedelta(years=int(y), months=int(m), days=int(d))
+                end_date = start_date + horizon
+            for key, data in {'horizon': horizon, 'start_date': start_date, 'end_date': end_date}.items():
+                valid_data[key] = data
+
+    elif ltab == '-BALANCE-':
+        field_money_input = [
+            'balance_capital', 'stocks', 'bonds', 'funds', 'metals',
+            'percent_stocks', 'percent_bonds', 'percent_funds',
+            'percent_metals', 'partial_repl'
+        ]
+
+        valid_data['pay_enabled'] = pay_enabled
+
+    for key in field_money_input:
         valid_data[key] = round(float(raw_data[key].replace(' ', '').replace(',', '.')), 2) if raw_data[key] else 0
 
-    if horizon:
-        start_date = dd.now().date()
-        try:
-            end_date = dd.strptime(horizon, '%d.%m.%Y').date()
-            horizon = relativedelta(end_date, start_date)
-        except ValueError:
-            y = float(horizon.replace(',', '.'))
-            m = (y - int(y)) * 12
-            d = (m - int(m)) * 30.44
-            horizon = relativedelta(years=int(y), months=int(m), days=int(d))
-            end_date = start_date + horizon
-        for key, data in {'horizon': horizon, 'start_date': start_date, 'end_date': end_date}.items():
-            valid_data[key] = data
+    valid_data['type_calc'] = type_calc
 
     return valid_data
 
