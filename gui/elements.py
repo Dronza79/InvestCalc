@@ -5,28 +5,30 @@ from .models import Period
 from .params import *
 
 
-def capital_input():
+def capital_input(clone=''):
     key = 'capital'
     return sg.Frame(f'{fields_input[key]}:', [[
-        sg.Input('', key=key, **cap_in),
+        sg.Input('', key=f'{clone}{key}', **cap_in),
         sg.T('\u20BD', font='_ 20'),
     ]], **main_frame)
 
 
-def start_amount_input():
-    key = 'initial'
+def amount_money_input(key):
     return sg.Frame(f'{fields_input[key]}:', [[
         sg.Input('', key=key, s=10, **other_in),
         sg.T('\u20BD'),
     ]], **main_frame)
 
 
-def regular_payment_input():
-    key = 'payment'
-    return sg.Frame(f'{fields_input[key]}:', [[
-        sg.Input('', key=key, s=10, **other_in),
-        sg.T('\u20BD'),
-    ]], **main_frame)
+def exchange_instrument_input(key):
+    return sg.Frame(f'{fields_input[key]}:', [
+        [
+            sg.Input('', key=key, s=15, **other_in),
+            sg.T('\u20BD'),
+            sg. Input('', s=5, key=f'percent_{key}', **other_in),
+            sg.Text('%')
+        ]
+    ], **main_frame)
 
 
 def invest_horizon_input():
@@ -50,7 +52,7 @@ def additional_param():
     return sg.Frame('Дополнительные параметры:', [[
         sg.Col([[
             sg.Checkbox(f'{fields_input[key_1]}', key=key_1, **chbx),
-        # ], [
+            # ], [
             sg.Checkbox(f'{fields_input[key_2]}', key=key_2, **chbx),
         ]]),
         sg.Push(),
@@ -58,6 +60,18 @@ def additional_param():
             sg.Combo(['1', '100', '500', '1000'], default_value=500, k='ratio', **combo_per)
         ]])
     ]], **main_frame)
+
+
+def payment_param():
+    key1 = 'pay_enabled'
+    key2 = 'partial_repl'
+    return sg.Frame('Дополнительные параметры:', [
+        [
+            sg.Checkbox(f'{fields_input[key1]}', key=key1, **chbx),
+            sg.Input('', key=key2, s=10, **other_in),
+            sg.T('\u20BD'),
+        ]
+    ], **main_frame)
 
 
 def periodicity_combo(key):

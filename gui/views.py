@@ -15,7 +15,7 @@ class MainView:
     def run(self):
         while not self.stop:
             self.event, self.value = self.window.read()
-            # print(f'MainView {self.event=} {self.value=}')
+            print(f'MainView {self.event=} {self.value=}')
 
             self.formatting_input_data()
             self.close_window()
@@ -36,7 +36,7 @@ class MainView:
                 outres.metadata += 1
                 self.window.extend_layout(
                     outres,
-                    [[layout_right_explan_invest(f'OUTRES-{outres.metadata}', result)]])
+                    [[layout_right_note_invest(f'OUTRES-{outres.metadata}', result)]])
 
                 update_chart(self.window['-CANVAS-'], result['graph_data'])
 
@@ -49,9 +49,9 @@ class MainView:
         self.window.move_to_center()
 
     def formatting_input_data(self):
-        if self.event in ['capital', 'payment', 'initial', 'horizon', 'rate']:
+        if self.event in key_input_format:
             self.window[self.event].update(background_color='white')
-            format_input = (div_to_ranks if self.event in ['capital', 'payment', 'initial'] else
+            format_input = (div_to_ranks if self.event in key_input_format_money else
                             clear_field_horizon if self.event == 'horizon' else clear_field_percent)
             self.window[self.event].update(value=format_input(self.value[self.event]))
 
@@ -67,7 +67,7 @@ class MainView:
         visibility_map = {
             '-INVEST-': ['-NOTE-', '-GRAPH-', '-TABLE-'],
             '-BOND-': ['-NOTE-'],
-            '-DUNNO-': ['-TABLE-']
+            '-BALANCE-': ['-NOTE-']
         }
 
         first_visible_tab = None
@@ -84,19 +84,38 @@ class MainView:
     def check_fullness_raw_data(self):
         errors = set()
         type_calc = {
-            'gains_capital': ['payment', 'horizon', 'rate'],
-            'installment': ['capital', 'horizon', 'rate'],
-            'time_to_goal': ['payment', 'capital', 'rate'],
+            '-INVEST-': {
+                'gains_capital': ['payment', 'horizon', 'rate'],
+                'installment': ['capital', 'horizon', 'rate'],
+                'time_to_goal': ['payment', 'capital', 'rate'],
+            },
+            '-BOND-': {},
+            '-BALANCE-': {
+                'portfolio': [
+                    ('balance_capital', 'balance_capital'),
+                    ('stocks', 'percent_stocks'),
+                    ('bonds', 'percent_bonds'),
+                    ('funds', 'percent_funds'),
+                    ('metals', 'percent_metals')
+                ]
+            },
         }
-
-        for name, group in type_calc.items():
-            if all(self.value[x] for x in group):
+        tab = self.value['LTAB']
+        for name, group in type_calc[tab].items():
+            if tab == '-INVEST-' and all(self.value[x] for x in group):
                 self.value['type_calc'] = name
                 return
-
+            elif tab == '-BALANCE-' and all(all([self.value[x], self.value[y]]) for x, y in group):
+                self.value['type_calc'] = name
+                return
             for val in group:
-                if not self.value[val]:
-                    errors.add((val, fields_input[val],))
+                if tab == '-INVEST-':
+                    if not self.value[val]:
+                        errors.add((val, fields_input[val],))
+                elif tab == '-BALANCE-':
+                    if not all([self.value[val[0]], self.value[val[1]]]):
+                        field = val[0] if not self.value[val[0]] else val[1]
+                        errors.add((field, fields_input[val[0]],))
         for val in errors:
             self.window[val[0]].update(background_color='Salmon')
         return [error[1] for error in errors]
