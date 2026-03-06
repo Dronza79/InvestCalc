@@ -33,7 +33,7 @@ def left_part():
             sg.Tab('Инвестиции', layout_left_invest(), k='-INVEST-'),
             sg.Tab('Облигации', [[]], k='-BOND-'),
             sg.Tab('Баланс портфеля', layout_left_balance(), k='-BALANCE-'),
-        ]], k='LTAB', **lft_tabgroup)],
+        ]], k='ltab', **lft_tabgroup)],
         [sg.Button('РАССЧИТАТЬ', key='-GO-', button_color='white on DarkGreen', **main_btn)],
         [sg.Button('ОЧИСТИТЬ', key='-CLR-', button_color='white on FireBrick', **main_btn)]
     ], **lft_col)
@@ -45,7 +45,7 @@ def right_part():
             sg.Tab('Пояснения', layout_right_note(), key='-NOTE-'),
             sg.Tab('График', layout_right_graph(), k='-GRAPH-'),
             sg.Tab('Таблица', [[]], k='-TABLE-'),
-        ]], k='RTAB', **rht_tabgroup)]
+        ]], k='rtab', **rht_tabgroup)]
     ], **rht_col)
 
 

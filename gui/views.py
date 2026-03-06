@@ -20,28 +20,30 @@ class MainView:
             self.formatting_input_data()
             self.close_window()
             self.managing_tab_visibility()
+            self.data_adjustment_in_parts()
 
             if self.event in ['-GO-', '\r']:
                 if check_data := self.check_fullness_raw_data():
                     sg.popup_error('Расчет не возможен', 'не заполнены поля:', *check_data)
                     continue
                 valid_data = reformat_raw_input_data(**self.value)
+                print(f'{valid_data=}')
                 result = calculations(**valid_data)
                 print(f'{result=}')
 
                 outres = self.window['-BODYNOTE-']
-                if outres.metadata:
-                    self.window[f'OUTRES-{outres.metadata}'].update(visible=False)
+                # if outres.metadata:
+                #     self.window[f'OUTRES-{outres.metadata}'].update(visible=False)
 
                 outres.metadata += 1
-                self.window.extend_layout(
-                    outres,
-                    [[layout_right_note_invest(f'OUTRES-{outres.metadata}', result)]])
+                # self.window.extend_layout(
+                #     outres,
+                #     [[layout_right_note_invest(f'OUTRES-{outres.metadata}', result)]])
 
-                update_chart(self.window['-CANVAS-'], result['graph_data'])
+                # update_chart(self.window['-CANVAS-'], result['graph_data'])
 
             elif self.event in ['-CLR-', 'Delete:46']:
-                [self.window[val].update('') for val in fields_input]
+                [self.window[val].update('') for val in key_input_format]
 
     def init_build_graph(self):
         update_chart(self.window['-CANVAS-'], [[0], [0], [0]])
@@ -50,7 +52,7 @@ class MainView:
 
     def formatting_input_data(self):
         if self.event in key_input_format:
-            self.window[self.event].update(background_color='white')
+            [self.window[key].update(background_color='white') for key in key_input_format]
             format_input = (div_to_ranks if self.event in key_input_format_money else
                             clear_field_horizon if self.event == 'horizon' else clear_field_percent)
             self.window[self.event].update(value=format_input(self.value[self.event]))
@@ -61,7 +63,7 @@ class MainView:
             self.stop = True
 
     def managing_tab_visibility(self):
-        if self.event != 'LTAB':
+        if self.event != 'ltab':
             return
 
         visibility_map = {
@@ -72,8 +74,8 @@ class MainView:
 
         first_visible_tab = None
 
-        for tab in self.window['RTAB'].Rows[0]:
-            is_visible = tab.Key in visibility_map.get(self.value['LTAB'], [])
+        for tab in self.window['rtab'].Rows[0]:
+            is_visible = tab.Key in visibility_map.get(self.value['ltab'], [])
             tab.update(visible=is_visible)
 
             # Запоминаем первую видимую вкладку для активации
@@ -100,12 +102,12 @@ class MainView:
                 ]
             },
         }
-        tab = self.value['LTAB']
+        tab = self.value['ltab']
         for name, group in type_calc[tab].items():
             if tab == '-INVEST-' and all(self.value[x] for x in group):
                 self.value['type_calc'] = name
                 return
-            elif tab == '-BALANCE-' and all(all([self.value[x], self.value[y]]) for x, y in group):
+            elif tab == '-BALANCE-' and all(bool(self.value[x]) is bool(self.value[y]) for x, y in group):
                 self.value['type_calc'] = name
                 return
             for val in group:
@@ -113,9 +115,42 @@ class MainView:
                     if not self.value[val]:
                         errors.add((val, fields_input[val],))
                 elif tab == '-BALANCE-':
-                    if not all([self.value[val[0]], self.value[val[1]]]):
+                    if not (bool(self.value[val[0]]) is bool(self.value[val[1]])):
                         field = val[0] if not self.value[val[0]] else val[1]
                         errors.add((field, fields_input[val[0]],))
         for val in errors:
             self.window[val[0]].update(background_color='Salmon')
+
         return [error[1] for error in errors]
+
+    def data_adjustment_in_parts(self):
+        lst_money = ['stocks', 'bonds', 'funds', 'metals']
+        lst_percent = ['percent_stocks', 'percent_bonds', 'percent_funds', 'percent_metals']
+
+        if self.event not in lst_money + lst_percent:
+            return
+
+        if not self.value['balance_capital']:
+            self.window['balance_capital'].update(background_color='Salmon')
+            sg.popup_error('ОШИБКА!!!', "Необходимо заполнить капитал!!!")
+            return
+
+        def func(string: str):
+            return float(string.replace(' ', '').replace(',', '.')) if string else 0
+
+        if self.event in lst_money:
+            limit = func(self.value['balance_capital'])
+            current_sum = sum(func(self.value[k]) for k in lst_money if k != self.event)
+            format_func = div_to_ranks
+        else:
+            limit = 100
+            format_func = clear_field_percent
+            current_sum = sum(func(self.value[k]) for k in lst_percent if k != self.event)
+
+        tracked_val = func(self.value[self.event])
+
+        if current_sum + tracked_val >= limit:
+            value = limit - current_sum
+            self.window[self.event].update(format_func(round(value,  2)))
+            return
+
