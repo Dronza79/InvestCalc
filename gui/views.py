@@ -15,7 +15,7 @@ class MainView:
     def run(self):
         while not self.stop:
             self.event, self.value = self.window.read()
-            print(f'MainView {self.event=} {self.value=}')
+            # print(f'MainView {self.event=} {self.value=}')
 
             self.formatting_input_data()
             self.close_window()
@@ -32,17 +32,17 @@ class MainView:
                 print(f'{result=}')
 
                 outres = self.window['-BODYNOTE-']
-                # if outres.metadata:
-                #     self.window[f'OUTRES-{outres.metadata}'].update(visible=False)
+                if outres.metadata:
+                    self.window[f'OUTRES-{outres.metadata}'].update(visible=False)
 
                 outres.metadata += 1
-                # self.window.extend_layout(
-                #     outres,
-                #     [[layout_right_note_invest(f'OUTRES-{outres.metadata}', result)]])
+                self.window.extend_layout(
+                    outres,
+                    [[layout_right_note_invest(f'OUTRES-{outres.metadata}', result)]])
 
-                # update_chart(self.window['-CANVAS-'], result['graph_data'])
+                update_chart(self.window['-CANVAS-'], result['graph_data'])
 
-            elif self.event in ['-CLR-', 'Delete:46']:
+            elif self.event in ['-CLR-',]: # 'Delete:46']:
                 [self.window[val].update('') for val in key_input_format]
 
     def init_build_graph(self):

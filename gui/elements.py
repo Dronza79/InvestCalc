@@ -65,13 +65,12 @@ def additional_param():
 def payment_param():
     key1 = 'pay_enabled'
     key2 = 'partial_repl'
-    return sg.Frame('Дополнительные параметры:', [
-        [
-            sg.Checkbox(f'{fields_input[key1]}', key=key1, **chbx),
-            sg.Input('', key=key2, s=10, **other_in),
-            sg.T('\u20BD'),
-        ]
-    ], **main_frame)
+    return sg.Frame('Параметры пополнения:', [[
+        sg.Checkbox(f'{fields_input[key1]}', key=key1, **chbx),
+        sg.Frame('Частично пополнить:', [[
+                sg.Input('', key=key2, s=15, **other_in), sg.T('\u20BD')
+        ]])
+    ]], **main_frame)
 
 
 def periodicity_combo(key):

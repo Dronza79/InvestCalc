@@ -1,3 +1,5 @@
+import importlib
+
 import matplotlib.pyplot as plt
 from dateutil.relativedelta import relativedelta
 from matplotlib import ticker
@@ -46,17 +48,23 @@ def draw_figure(canvas, figure):
 
 
 def create_inscriptions_value(canvas_elem, data_list):
+    format_digit = importlib.import_module("core.utilites").format_digit_for_graph
     for i, layer_values in enumerate(data_list[0][1:], start=1):
-        val = data_list[1][i] + data_list[2][i]
+        max_val = data_list[1][i] + data_list[2][i]
 
         # Вычисляем Y-координату для текста (середина слоя)
-        text_y = val
+        text_y = max_val + 10000 if i + 1 else max_val
         last_x = layer_values
 
-        label_text = f"{(val + 499) // 500 * 500:,}".replace(',', ' ')
+        # label_text = f"{max_val:,}".replace(',', ' ')
+        label_text = format_digit(max_val)
+        # label_text1 = f"{data_list[1][i]:,}".replace(',', ' ')
+        label_text1 = format_digit(data_list[1][i])
 
         canvas_elem.text(last_x, text_y, label_text,
-                         va='center', ha='right', fontsize=9, color='black')
+                         va='top', ha='right', fontsize=9, color='black')
+        canvas_elem.text(last_x, data_list[1][i], label_text1,
+                         va='bottom', ha='left', fontsize=9, color='blue')
 
 
 def update_chart(canvas_elem, data_list):
@@ -89,8 +97,8 @@ def update_chart(canvas_elem, data_list):
     ax.yaxis.set_major_formatter(formatter)
 
     # Построение самого графика
-    ax.stackplot(*data_list, labels=['Внесено', "Сложный процент"])
-    ax.legend(loc='upper right')
+    ax.stackplot(*data_list, labels=['Внесено', "Доход"])
+    ax.legend(loc='upper left')
 
     # Оформление значений на графике
     create_inscriptions_value(ax, data_list)

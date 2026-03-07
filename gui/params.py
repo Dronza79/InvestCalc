@@ -13,7 +13,7 @@ fields_input = {
     'bonds': 'Облигации',
     'funds': 'Фонды',
     'metals': 'Драгметаллы',
-    'pay_enabled': 'С пополнением',
+    'pay_enabled': 'Докупить',
 }
 
 key_input_format_money = [

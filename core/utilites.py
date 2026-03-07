@@ -136,9 +136,18 @@ def reformat_raw_input_data(
 
 
 def check_for_day_week(date_value):
-    week_day = date_value.weekday()
+    return date_value
+    # week_day = date_value.weekday()
+    # return (
+    #     date_value if week_day < 5 else
+    #     date_value + relativedelta(days=1) if week_day > 5 else
+    #     date_value + relativedelta(days=2)
+    # )
+
+
+def format_digit_for_graph(digit):
     return (
-        date_value if week_day < 5 else
-        date_value + relativedelta(days=1) if week_day > 5 else
-        date_value + relativedelta(days=2)
+        f"{int(digit / 1e6)}кк" if digit == 1e6
+        else f"{digit / 1e6:.1f}кк" if digit > 1e6
+        else f"{int(digit / 1e3)}к"
     )
