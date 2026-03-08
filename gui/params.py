@@ -386,3 +386,22 @@ exp_both = {
     'expand_x': True,
     'expand_y': True,
 }
+
+col_popup_error = {
+    'justification': 'c',
+    'element_justification': 'l',
+    'vertical_alignment': 'c',
+}
+
+popup_errors = {
+    'font': 'Corner 12',
+    # return_keyboard_events: bool = False,
+    'text_justification': 'c',
+    # no_titlebar: bool = False,
+    # grab_anywhere: bool = False,
+    # grab_anywhere_using_control: bool = True,
+    'keep_on_top': True,
+    'finalize': True,
+    'element_justification': 'c',
+    'modal': True,
+}
