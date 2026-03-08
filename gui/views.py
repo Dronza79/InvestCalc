@@ -27,6 +27,7 @@ class MainView:
                     sg.popup_error('Расчет не возможен', 'не заполнены поля:', *check_data)
                     continue
                 valid_data = reformat_raw_input_data(**self.value)
+                print(f'{self.value=}')
                 print(f'{valid_data=}')
                 result = calculations(**valid_data)
                 print(f'{result=}')
