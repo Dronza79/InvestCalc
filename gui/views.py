@@ -24,7 +24,8 @@ class MainView:
 
             if self.event in ['-GO-', '\r']:
                 if check_data := self.check_fullness_raw_data():
-                    sg.popup_error('Расчет не возможен', 'не заполнены поля:', *check_data)
+                    popup_errors_notification(self, [
+                        'Расчет совершить не возможно!',  'Не заполнены следующие поля:'], check_data)
                     continue
                 valid_data = reformat_raw_input_data(**self.value)
                 print(f'{self.value=}')
@@ -62,6 +63,12 @@ class MainView:
         if self.event == sg.WIN_CLOSED:
             self.window.close()
             self.stop = True
+
+    def get_location(self):
+        self.window.refresh()
+        size_w, size_h = self.window.current_size_accurate()
+        loc_x, loc_y = self.window.current_location()
+        return loc_x + size_w // 2, loc_y + size_h // 2
 
     def managing_tab_visibility(self):
         if self.event != 'ltab':
