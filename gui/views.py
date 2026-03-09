@@ -25,7 +25,8 @@ class MainView:
             if self.event in ['-GO-', '\r']:
                 if check_data := self.check_fullness_raw_data():
                     popup_errors_notification(self, [
-                        'Расчет совершить не возможно!',  'Не заполнены следующие поля:'], check_data)
+                        'Расчет совершить не возможно!',
+                        'Не заполнены следующие поля:'], check_data)
                     continue
                 valid_data = reformat_raw_input_data(**self.value)
                 print(f'{self.value=}')
@@ -36,11 +37,16 @@ class MainView:
                 outres = self.window['-BODYNOTE-']
                 if outres.metadata:
                     self.window[f'OUTRES-{outres.metadata}'].update(visible=False)
-
                 outres.metadata += 1
+
+                layout_extend = (
+                    layout_right_note_invest if self.value['ltab'] == '-INVEST-'
+                    else layout_right_note_balance
+                 )
+
                 self.window.extend_layout(
                     outres,
-                    [[layout_right_note_invest(f'OUTRES-{outres.metadata}', result)]])
+                    [[layout_extend(f'OUTRES-{outres.metadata}', result)]])
 
                 update_chart(self.window['-CANVAS-'], result['graph_data'])
 

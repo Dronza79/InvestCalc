@@ -67,3 +67,8 @@ def layout_right_note_invest(key, kwargs):
         layout += [[invest_liner_output(key='inf', **kwargs)]]
 
     return sg.pin(sg.Col(layout, key=key, **exp_both))
+
+
+def layout_right_note_balance(key, data):
+    layout = [[]]
+    return sg.pin(sg.Col(layout, key=key, **exp_both))
