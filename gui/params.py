@@ -394,7 +394,7 @@ col_popup_error = {
 }
 
 popup_errors = {
-    'font': 'Corner 12',
+    'font': 'Courier 12',
     # return_keyboard_events: bool = False,
     'text_justification': 'c',
     # no_titlebar: bool = False,

@@ -194,12 +194,14 @@ def get_balance_portfolio(
         extra_needed = 0
 
     actions = {}
+    totals = {}
     for key, data in assets.items():
         target_val = target_total_capital * (data["target_p"] / 100)
         diff = round(target_val - data["curr"], 2)
 
         # Если разница меньше 1 рубля, считаем что баланс в норме (0)
         actions[f"action_{key}"] = diff if abs(diff) >= 1.0 else 0.0
+        totals[f'total_{key}'] = round(target_val, 2)
 
     return {
         "balance_capital": balance_capital,
@@ -211,7 +213,7 @@ def get_balance_portfolio(
         "extra_needed": round(extra_needed, 2),
         "target_total": round(target_total_capital, 2),
         'internal_cash': internal_cash,
-        **actions, **kwargs
+        **actions, **totals, **kwargs
     }
 
 

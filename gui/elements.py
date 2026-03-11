@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 
-from core.utilites import div_to_ranks, format_years_genitive
+from core.utilites import *
 from .models import Period
 from .params import *
 
@@ -25,7 +25,7 @@ def exchange_instrument_input(key):
         [
             sg.Input('', key=key, s=15, **other_in),
             sg.T('\u20BD'),
-            sg. Input('', s=5, key=f'percent_{key}', **other_in),
+            sg.Input('', s=5, key=f'percent_{key}', **other_in),
             sg.Text('%')
         ]
     ], **main_frame)
@@ -68,7 +68,7 @@ def payment_param():
     return sg.Frame('Параметры пополнения:', [[
         sg.Checkbox(f'{fields_input[key1]}', key=key1, **chbx),
         sg.Frame('Частично пополнить:', [[
-                sg.Input('', key=key2, s=15, **other_in), sg.T('\u20BD')
+            sg.Input('', key=key2, s=15, **other_in), sg.T('\u20BD')
         ]])
     ]], **main_frame)
 
@@ -96,6 +96,107 @@ def invest_header_output(period_payment, payment, horizon, **kwargs):
         sg.T(f'{format_years_genitive(horizon)},', **param),
         sg.T('вы накопите:', **param)
     ]], expand_x=True, element_justification='c', pad=20)
+
+
+def balance_header_output():
+    param = {'font': 'Courier 20', 'pad': (5, 0)}
+
+    return sg.Col([
+        [sg.Text("Результаты ребалансировки", **param)],
+        [sg.HSeparator()],
+    ], expand_x=False, justification='c', element_justification='c')
+
+
+def general_info(balance_capital, target_total, extra_needed, internal_cash, partial_repl, **kwargs):
+    font_param = {'font': 'Courier 12'}
+    title_param = {'expand_x': True, 'justification': 'c', }
+    total_param = {'font': 'Courier 12 bold'}
+    orange = {'text_color': 'orange'}
+    relay = {
+        'percent_stocks': 'Акции',
+        'percent_bonds': 'Облигации',
+        'percent_funds': 'Фонды',
+        'percent_metals': 'Драгметалы'
+    }
+    layout = [
+        [sg.Text('Заданные параметры:', p=((0, 0), (10, 0)), **title_param, **font_param)],
+        [sg.HSeparator()],
+        [
+            sg.Text(f"- Текущий капитал:", p=0, **font_param),
+            sg.Push(),
+            sg.Text(div_to_ranks(to_round_down(balance_capital)), p=0, **font_param),
+            sg.Text(f" \u20BD", p=0, **font_param)
+        ], [
+            sg.Text(f"- Неучтенные средства:", p=0, **font_param),
+            sg.Push(),
+            sg.Text(div_to_ranks(round(internal_cash, 2)), p=0, **font_param),
+            sg.Text(f" \u20BD", p=0, **font_param),
+        ],
+    ]
+    if partial_repl:
+        layout += [[
+            sg.Text(f"- Частичное пополнение:", p=0, **font_param),
+            sg.Push(),
+            sg.Text(div_to_ranks(internal_cash), p=0, **font_param),
+            sg.Text(f" \u20BD", p=0, **font_param),
+        ]]
+    if extra_needed:
+        layout += [[
+                sg.Text(f"- Необходимо добавить:", p=0, **orange, **font_param),
+                sg.Push(),
+                sg.Text(div_to_ranks(to_round_up(extra_needed)), p=0, **orange, **font_param),
+                sg.Text(f" \u20BD", p=0, **orange, **font_param),
+        ]]
+    layout += [[sg.Text('Целевой баланс:', p=((0, 0), (10, 0)), **title_param, **font_param)], [sg.HSeparator()]]
+    layout += [
+        [sg.Text(f"- {relay[key]}: \t{kwargs[key]} %", p=0, **font_param)] for key in relay if kwargs[key]
+    ]
+
+    return sg.Col(layout)
+
+
+def operations_exchange_inst(data):
+    inst_param = {'font': 'Courier 16 bold'}
+    title_param = {'expand_x': True, 'justification': 'c', }
+    relay = {
+        'action_stocks': 'Акции',
+        'action_bonds': 'Облигации',
+        'action_funds': 'Фонды',
+        'action_metals': 'Драгметалы',
+    }
+    layout = [
+        [sg.Text("Действия с инструментами:", p=((0, 0), (10, 0)), **title_param, **inst_param)], [sg.HSeparator()]
+    ]
+    for key in relay:
+        layout += [
+            [
+                sg.Text(f"{f'{relay[key]}:':.<20}", **inst_param),
+                sg.Text(get_text(data[key]), text_color=get_color(data[key]), p=(5, 0), **inst_param),
+            ]
+        ]
+    layout += [[sg.HSeparator()]]
+
+    return sg.Col(layout)
+
+
+def total_result_balance(target_total, **data):
+    font_param = {'font': 'Courier 12'}
+    title_param = {'expand_x': True, 'justification': 'c', }
+    total_param = {'font': 'Courier 12 bold'}
+    relay = {
+        'total_stocks': 'Акции',
+        'total_bonds': 'Облигации',
+        'total_funds': 'Фонды',
+        'total_metals': 'Драгметалы'
+    }
+    layout = [
+        [sg.Text('Итоговое состояние портфеля:', p=((0, 0), (10, 0)), **title_param, **font_param)],
+        [sg.HSeparator()]]
+    layout += [[sg.Text(f"- {relay[key]}: \t{int(data[key])}  \u20BD", p=0, **font_param)] for key in relay]
+    layout += [[sg.Text(f"Итоговый капитал: {div_to_ranks(target_total)} \u20BD",
+                        p=((0, 0), (10, 0)), **total_param)]]
+
+    return sg.Col(layout)
 
 
 def invest_leader_output(capital_gans, **kwargs):

@@ -1,5 +1,4 @@
 from core.processor import calculations
-from core.utilites import div_to_ranks, clear_field_horizon, clear_field_percent, reformat_raw_input_data
 from .models import update_chart
 from .windows import *
 
@@ -48,7 +47,8 @@ class MainView:
                     outres,
                     [[layout_extend(f'OUTRES-{outres.metadata}', result)]])
 
-                update_chart(self.window['-CANVAS-'], result['graph_data'])
+                if self.value['ltab'] == '-INVEST-':
+                    update_chart(self.window['-CANVAS-'], result['graph_data'])
 
             elif self.event in ['-CLR-',]: # 'Delete:46']:
                 [self.window[val].update('') for val in key_input_format]
@@ -146,11 +146,12 @@ class MainView:
 
         if not self.value['balance_capital']:
             self.window['balance_capital'].update(background_color='Salmon')
-            sg.popup_error('ОШИБКА!!!', "Необходимо заполнить капитал!!!")
+            popup_errors_notification(self, ['ОШИБКА!!!'], ["Необходимо заполнить капитал!!!"])
             return
 
         def func(string: str):
-            return float(string.replace(' ', '').replace(',', '.')) if string else 0
+            res = (clear_field_digits(string).replace(' ', '').replace(',', '.'))
+            return float(res) if res else 0
 
         if self.event in lst_money:
             limit = func(self.value['balance_capital'])

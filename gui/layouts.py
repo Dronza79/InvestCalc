@@ -31,8 +31,8 @@ def left_part():
     return sg.Col([[
         sg.TabGroup([[
             sg.Tab('Инвестиции', layout_left_invest(), k='-INVEST-'),
-            sg.Tab('Облигации', [[]], k='-BOND-'),
             sg.Tab('Баланс портфеля', layout_left_balance(), k='-BALANCE-'),
+            sg.Tab('Облигации', [[]], k='-BOND-', disabled=True),
         ]], k='ltab', **lft_tabgroup)],
         [sg.Button('РАССЧИТАТЬ', key='-GO-', button_color='white on DarkGreen', **main_btn)],
         [sg.Button('ОЧИСТИТЬ', key='-CLR-', button_color='white on FireBrick', **main_btn)]
@@ -70,5 +70,10 @@ def layout_right_note_invest(key, kwargs):
 
 
 def layout_right_note_balance(key, data):
-    layout = [[]]
-    return sg.pin(sg.Col(layout, key=key, **exp_both))
+    layout = [
+        [balance_header_output()],
+        [general_info(**data)],
+        [operations_exchange_inst(data)],
+        [total_result_balance(**data)]
+    ]
+    return sg.pin(sg.Col(layout, key=key, **exp_both), expand_x=True)

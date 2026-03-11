@@ -7,12 +7,35 @@ from gui.models import Period
 
 
 def clear_field_digits(string):
-    return re.sub(r'[^\d.,]', '', str(string)).replace('.', ',')
+    string = re.sub(r'[^\d,]', '', string.replace('.', ','))
+    string = string.lstrip(',')
+    if ',' in string:
+        int_part, decimal_part = string.split(',', 1)
+        decimal_part = decimal_part.replace(',', '')
+        if len(decimal_part) == 1:
+            decimal_part += '0'
+        elif len(decimal_part) > 2:
+            decimal_part = decimal_part[:1] + decimal_part[-1]
+        string = f"{int_part},{decimal_part}"
+    return string
+
+
+def to_round_up(digit):
+    return (digit + 99) // 100 * 100
+
+
+def to_round_down(digit):
+    return digit // 100 * 100
 
 
 def div_to_ranks(string):
     digit_string = clear_field_digits(string)
-    return re.sub(r'(?=(?:\d{3})+(?!\d))', ' ', digit_string).strip()
+    if ',' in digit_string:
+        integer_part, decimal_part = digit_string.split(',', 1)
+        integer_part = re.sub(r'(?<!,)\d(?=(\d{3})+(?:,|$))', r'\g<0> ', integer_part).strip()
+        return f"{integer_part},{decimal_part}"
+    else:
+        return re.sub(r'\d(?=(\d{3})+(?!\d))', r'\g<0> ', digit_string)
 
 
 def format_digit_years(digit):  # Именительный подеж
@@ -92,6 +115,10 @@ def reformat_raw_input_data(
 ):
     valid_data = {}
     field_money_input = []
+    field_dont_round = [
+        'percent_stocks', 'percent_bonds', 'percent_funds',
+        'percent_metals', 'capital', 'payment', 'initial'
+    ]
 
     if ltab == '-INVEST-':
         field_money_input = ['capital', 'payment', 'initial']
@@ -121,14 +148,17 @@ def reformat_raw_input_data(
     elif ltab == '-BALANCE-':
         field_money_input = [
             'balance_capital', 'stocks', 'bonds', 'funds', 'metals',
-            'percent_stocks', 'percent_bonds', 'percent_funds',
-            'percent_metals', 'partial_repl'
+            'partial_repl', 'percent_stocks', 'percent_bonds',
+            'percent_funds', 'percent_metals'
         ]
+
 
         valid_data['pay_enabled'] = pay_enabled
 
+
     for key in field_money_input:
-        valid_data[key] = round(float(raw_data[key].replace(' ', '').replace(',', '.')), 2) if raw_data[key] else 0
+        value = round(float(raw_data[key].replace(' ', '').replace(',', '.')), 2) if raw_data[key] else 0
+        valid_data[key] = to_round_down(value) if key not in field_dont_round else value
 
     valid_data['type_calc'] = type_calc
 
@@ -150,4 +180,16 @@ def format_digit_for_graph(digit):
         f"{int(digit / 1e6)}кк" if digit == 1e6
         else f"{digit / 1e6:.1f}кк" if digit > 1e6
         else f"{int(digit / 1e3)}к"
+    )
+
+
+def get_color(val):
+    return 'Darkred' if val < 0 else 'Darkgreen' if val > 0 else 'DimGrey'
+
+
+def get_text(val):
+    return (
+        f'ДОКУПИТЬ на {div_to_ranks(to_round_up(abs(val)))} \u20BD' if val > 0 else
+        f'ПРОДАТЬ на {div_to_ranks(to_round_up(abs(val)))} \u20BD' if val < 0 else
+        "ДЕРЖАТЬ"
     )
