@@ -7,7 +7,7 @@ from gui.models import Period
 
 
 def clear_field_digits(string):
-    string = re.sub(r'[^\d,]', '', string.replace('.', ','))
+    string = re.sub(r'[^\d,]', '', str(string).replace('.', ','))
     string = string.lstrip(',')
     if ',' in string:
         int_part, decimal_part = string.split(',', 1)
@@ -152,13 +152,12 @@ def reformat_raw_input_data(
             'percent_funds', 'percent_metals'
         ]
 
-
         valid_data['pay_enabled'] = pay_enabled
-
 
     for key in field_money_input:
         value = round(float(raw_data[key].replace(' ', '').replace(',', '.')), 2) if raw_data[key] else 0
-        valid_data[key] = to_round_down(value) if key not in field_dont_round else value
+        # valid_data[key] = to_round_down(value) if key not in field_dont_round else value
+        valid_data[key] = value
 
     valid_data['type_calc'] = type_calc
 
@@ -189,7 +188,7 @@ def get_color(val):
 
 def get_text(val):
     return (
-        f'ДОКУПИТЬ на {div_to_ranks(to_round_up(abs(val)))} \u20BD' if val > 0 else
-        f'ПРОДАТЬ на {div_to_ranks(to_round_up(abs(val)))} \u20BD' if val < 0 else
+        f'ДОКУПИТЬ на {div_to_ranks(abs(val))} \u20BD' if val > 0 else
+        f'ПРОДАТЬ на {div_to_ranks(abs(val))} \u20BD' if val < 0 else
         "ДЕРЖАТЬ"
     )

@@ -107,10 +107,9 @@ def balance_header_output():
     ], expand_x=False, justification='c', element_justification='c')
 
 
-def general_info(balance_capital, target_total, extra_needed, internal_cash, partial_repl, **kwargs):
+def general_info(balance_capital, extra_needed, internal_cash, partial_repl, **kwargs):
     font_param = {'font': 'Courier 12'}
     title_param = {'expand_x': True, 'justification': 'c', }
-    total_param = {'font': 'Courier 12 bold'}
     orange = {'text_color': 'orange'}
     relay = {
         'percent_stocks': 'Акции',
@@ -124,7 +123,7 @@ def general_info(balance_capital, target_total, extra_needed, internal_cash, par
         [
             sg.Text(f"- Текущий капитал:", p=0, **font_param),
             sg.Push(),
-            sg.Text(div_to_ranks(to_round_down(balance_capital)), p=0, **font_param),
+            sg.Text(div_to_ranks(round(balance_capital, 2)), p=0, **font_param),
             sg.Text(f" \u20BD", p=0, **font_param)
         ], [
             sg.Text(f"- Неучтенные средства:", p=0, **font_param),
@@ -137,14 +136,14 @@ def general_info(balance_capital, target_total, extra_needed, internal_cash, par
         layout += [[
             sg.Text(f"- Частичное пополнение:", p=0, **font_param),
             sg.Push(),
-            sg.Text(div_to_ranks(internal_cash), p=0, **font_param),
+            sg.Text(div_to_ranks(partial_repl), p=0, **font_param),
             sg.Text(f" \u20BD", p=0, **font_param),
         ]]
     if extra_needed:
         layout += [[
                 sg.Text(f"- Необходимо добавить:", p=0, **orange, **font_param),
                 sg.Push(),
-                sg.Text(div_to_ranks(to_round_up(extra_needed)), p=0, **orange, **font_param),
+                sg.Text(div_to_ranks(round(extra_needed, 2)), p=0, **orange, **font_param),
                 sg.Text(f" \u20BD", p=0, **orange, **font_param),
         ]]
     layout += [[sg.Text('Целевой баланс:', p=((0, 0), (10, 0)), **title_param, **font_param)], [sg.HSeparator()]]

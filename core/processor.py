@@ -200,7 +200,7 @@ def get_balance_portfolio(
         diff = round(target_val - data["curr"], 2)
 
         # Если разница меньше 1 рубля, считаем что баланс в норме (0)
-        actions[f"action_{key}"] = diff if abs(diff) >= 1.0 else 0.0
+        actions[f"action_{key}"] = diff if abs(diff) >= 100 else 0.0
         totals[f'total_{key}'] = round(target_val, 2)
 
     return {
