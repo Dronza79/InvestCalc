@@ -30,9 +30,9 @@ def layout_right_graph():
 def left_part():
     return sg.Col([[
         sg.TabGroup([[
-            sg.Tab('Инвестиции', layout_left_invest(), k='-INVEST-'),
+            sg.Tab('План инвестиции', layout_left_invest(), k='-INVEST-'),
             sg.Tab('Баланс портфеля', layout_left_balance(), k='-BALANCE-'),
-            sg.Tab('Облигации', [[]], k='-BOND-', disabled=True),
+            # sg.Tab('Облигации', [[]], k='-BOND-', disabled=True),
         ]], k='ltab', **lft_tabgroup)],
         [sg.Button('РАССЧИТАТЬ', key='-GO-', button_color='white on DarkGreen', **main_btn)],
         [sg.Button('ОЧИСТИТЬ', key='-CLR-', button_color='white on FireBrick', **main_btn)]
@@ -57,6 +57,7 @@ def main_layout():
 
 
 def layout_right_note_invest(key, kwargs):
+    print(f'layout_right_note_invest({key=}, {kwargs=})')
     layout = [[invest_header_output(**kwargs)], [invest_leader_output(**kwargs)]]
     if kwargs.get('initial'):
         layout += [[invest_liner_output(key='start', **kwargs)]]

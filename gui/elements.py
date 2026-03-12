@@ -125,13 +125,14 @@ def general_info(balance_capital, extra_needed, internal_cash, partial_repl, **k
             sg.Push(),
             sg.Text(div_to_ranks(round(balance_capital, 2)), p=0, **font_param),
             sg.Text(f" \u20BD", p=0, **font_param)
-        ], [
+        ]]
+    if internal_cash:
+        layout += [[
             sg.Text(f"- Неучтенные средства:", p=0, **font_param),
             sg.Push(),
             sg.Text(div_to_ranks(round(internal_cash, 2)), p=0, **font_param),
             sg.Text(f" \u20BD", p=0, **font_param),
-        ],
-    ]
+        ]]
     if partial_repl:
         layout += [[
             sg.Text(f"- Частичное пополнение:", p=0, **font_param),

@@ -144,6 +144,8 @@ def reformat_raw_input_data(
                 end_date = start_date + horizon
             for key, data in {'horizon': horizon, 'start_date': start_date, 'end_date': end_date}.items():
                 valid_data[key] = data
+        else:
+            valid_data['start_date'] = dd.now().date()
 
     elif ltab == '-BALANCE-':
         field_money_input = [
