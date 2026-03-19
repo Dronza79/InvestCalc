@@ -1,4 +1,5 @@
 import importlib
+from datetime import date
 
 import matplotlib.pyplot as plt
 from dateutil.relativedelta import relativedelta
@@ -22,6 +23,24 @@ class Period:
 
     def __str__(self):
         return self.__name
+
+    def __add__(self, other):
+        # Позволяет делать: period + date
+        if isinstance(other, date):
+            return other + self.__value
+        return NotImplemented
+
+    def __radd__(self, other):
+        # Позволяет делать: date + period
+        return self.__add__(other)
+
+    def __sub__(self, other):
+        return NotImplemented
+
+    def __rsub__(self, other):
+        if isinstance(other, date):
+            return other - self.__value
+        return NotImplemented
 
     @property
     def duration(self):

@@ -47,8 +47,8 @@ class MainView:
                     outres,
                     [[layout_extend(f'OUTRES-{outres.metadata}', result)]])
 
-                if self.value['ltab'] == '-INVEST-':
-                    update_chart(self.window['-CANVAS-'], result['graph_data'])
+                # if self.value['ltab'] == '-INVEST-':
+                #     update_chart(self.window['-CANVAS-'], result['graph_data'])
 
             elif self.event in ['-CLR-',]: # 'Delete:46']:
                 [self.window[val].update('') for val in key_input_format]

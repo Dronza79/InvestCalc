@@ -84,16 +84,30 @@ def periodicity_combo(key):
     ]], **main_frame)
 
 
-def invest_header_output(period_payment, payment, horizon, **kwargs):
+def invest_header_output(type_calc, **data):
     param = {'font': 'Courier 20', 'pad': (5, 0)}
+    if type_calc == 'time_to_goal':
+        return sg.Col([[
+            sg.Text('Что бы накопить ', **param),
+            sg.Text(div_to_ranks(str(data['capital'])), **param),
+            sg.T('\u20BD,', **param),
+        ], [
+            sg.T('откладывая ', **param),
+            sg.T(data['period_payment'], **param),
+            sg.T('по ', **param),
+            sg.Text(div_to_ranks(str(data['payment'])), **param),
+            sg.T('\u20BD', **param),
+        ], [
+            sg.Text('Вам потребуется:', **param),
+        ]], expand_x=True, element_justification='c', pad=20)
     return sg.Col([[
         sg.Text('Откладывая по', **param),
-        sg.Text(div_to_ranks(str(payment)), **param),
+        sg.Text(div_to_ranks(str(data['payment'])), **param),
         sg.T('\u20BD', **param),
-        sg.T(period_payment, **param)
+        sg.T(data['period_payment'], **param)
     ], [
         sg.T('на протяжении', **param),
-        sg.T(f'{format_years_genitive(horizon)},', **param),
+        sg.T(f'{format_years_genitive(data["horizon"])},', **param),
         sg.T('вы накопите:', **param)
     ]], expand_x=True, element_justification='c', pad=20)
 
@@ -142,10 +156,10 @@ def general_info(balance_capital, extra_needed, internal_cash, partial_repl, **k
         ]]
     if extra_needed:
         layout += [[
-                sg.Text(f"- Необходимо добавить:", p=0, **orange, **font_param),
-                sg.Push(),
-                sg.Text(div_to_ranks(round(extra_needed, 2)), p=0, **orange, **font_param),
-                sg.Text(f" \u20BD", p=0, **orange, **font_param),
+            sg.Text(f"- Необходимо добавить:", p=0, **orange, **font_param),
+            sg.Push(),
+            sg.Text(div_to_ranks(round(extra_needed, 2)), p=0, **orange, **font_param),
+            sg.Text(f" \u20BD", p=0, **orange, **font_param),
         ]]
     layout += [[sg.Text('Целевой баланс:', p=((0, 0), (10, 0)), **title_param, **font_param)], [sg.HSeparator()]]
     layout += [
@@ -202,10 +216,14 @@ def total_result_balance(target_total, **data):
     return sg.Col(layout)
 
 
-def invest_leader_output(capital_gans, **kwargs):
+def invest_leader_output(type_calc, **data):
     param = {'font': 'Courier 50 bold', 'pad': (5, 0)}
+    if type_calc == 'time_to_goal':
+        return sg.Col([[
+            sg.T(f'{format_years_genitive(data["horizon"])},', **param),
+        ]], expand_x=True, element_justification='c', pad=10)
     return sg.Col([[
-        sg.Text(div_to_ranks(str(capital_gans)), **param),
+        sg.Text(div_to_ranks(str(data["capital_gans"])), **param),
         sg.T('\u20BD', **param),
     ]], expand_x=True, element_justification='c', pad=10)
 

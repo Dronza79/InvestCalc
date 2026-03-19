@@ -5,20 +5,20 @@ import re
 from dateutil.relativedelta import relativedelta
 
 
-def get_month_payment():
-    max_capital = int(input('Введите желаемый капитал: ').replace(' ', ''))
-    annual_rate = float(input('Планируемую годовую ставку в процентах: '))
-    rate = annual_rate / 1200
-    horizon = re.findall(r'\d+', input('Введите срок в годах: '))
-    per = int(horizon[0]) * 12 + int(12 / 10 * (int(horizon[-1]) if len(horizon) != 1 else 0))
-    ratio = int(input('Укажите кратность значения: '))
-    pmt = int((max_capital * rate / ((1 + rate) ** per - 1) + ratio - 1) // ratio * ratio)
-    return {
-        'payment': pmt,
-        'month': per,
-        'capital': max_capital,
-        'annual_rate': annual_rate,
-    }
+# def get_month_payment():
+#     max_capital = int(input('Введите желаемый капитал: ').replace(' ', ''))
+#     annual_rate = float(input('Планируемую годовую ставку в процентах: '))
+#     rate = annual_rate / 1200
+#     horizon = re.findall(r'\d+', input('Введите срок в годах: '))
+#     per = int(horizon[0]) * 12 + int(12 / 10 * (int(horizon[-1]) if len(horizon) != 1 else 0))
+#     ratio = int(input('Укажите кратность значения: '))
+#     pmt = int((max_capital * rate / ((1 + rate) ** per - 1) + ratio - 1) // ratio * ratio)
+#     return {
+#         'payment': pmt,
+#         'month': per,
+#         'capital': max_capital,
+#         'annual_rate': annual_rate,
+#     }
 
 
 def calculate_horizon_custom(
@@ -30,60 +30,63 @@ def calculate_horizon_custom(
 
     # Даты следующих событий
     next_payment = start_date + period_payment
-    next_profit = start_date + period_profit
+    profit_date = start_date + period_profit
+
+    profit_days = (profit_date - start_date).days
+    annual_profit_for_tax = 0
+    income = 0
+    total_taxes_paid = 0
+    deposit = 0
 
     # Ежедневные коэффициенты
-    daily_rate = (1 + rate / 100) ** (1/365.25) - 1
-    daily_inf = (1 + 0.8 / 100) ** (1/365.25) - 1
-
+    daily_rate_simple = (1 + rate / 100) ** (1/365.25) - 1
+    daily_inf = (1 + 8 / 100) ** (1/365.25) - 1
 
     while current_balance < capital:
         current_date += relativedelta(days=1)
+        is_tax_day = (current_date.month == 12 and current_date.day == 31)
 
-        # 1. Уплата налога в начале нового года за прошлый год
-        if current_date.year != last_year:
-            if tax_enabled:
-                current_balance -= tax_to_pay
+        # 1. Начисление дохода (period_profit)
+        if current_date == profit_date:
+            current_past_rate = daily_rate_simple * profit_days
+            profit = current_balance * current_past_rate
+            current_balance += profit
+            income += profit
+            annual_profit_for_tax += profit
+            profit_date += period_profit
 
-            # Сброс счетчиков на новый год
-            tax_to_pay = 0.0
-            yearly_profit_acc = 0.0
-            last_year = current_date.year
-
-        # 2. Начисление дохода (period_profit)
-        if current_date >= next_profit:
-            days_in_period = (next_profit - (next_profit - period_profit)).days
-            period_rate = (1 + daily_rate) ** days_in_period - 1
-            gross_profit = current_balance * period_rate
-
-            # Начисляем прибыль на баланс сразу (капитализация)
-            current_balance += gross_profit
-
-            # Но считаем налог, который "запомним" до конца года
-            if tax_enabled:
-                if yearly_profit_acc >= 5000000:
-                    tax_to_pay += gross_profit * 0.15
-                elif yearly_profit_acc + gross_profit > 5000000:
-                    before_limit = 5000000 - yearly_profit_acc
-                    after_limit = gross_profit - before_limit
-                    tax_to_pay += (before_limit * 0.13) + (after_limit * 0.15)
-                else:
-                    tax_to_pay += gross_profit * 0.13
-
-                yearly_profit_acc += gross_profit
-
-            next_profit += period_profit
-
-        # 3. Пополнение (period_payment)
-        if current_date >= next_payment:
+        # 2 Пополнение баланса
+        if current_date == next_payment:
             current_balance += payment
+            deposit += payment
             next_payment += period_payment
 
-        # 4. Учет инфляции (приведение к сегодняшним ценам)
-        # Если в 'inf_enabled' передано False, расчет все равно идет по 8% (как в условии)
-        current_balance /= (1 + daily_inf)
+        # 3. Уплата налога за год
+        if is_tax_day and tax_enabled:
+            if annual_profit_for_tax <= 2.4e6:
+                tax = annual_profit_for_tax * 0.13
+            else:
+                tax = (2.4e6 * 0.13) + (annual_profit_for_tax - 2.4e6) * 0.15
+            current_balance -= tax
+            total_taxes_paid += tax
+            annual_profit_for_tax = 0
 
-    return {}
+        # 4. Учет инфляции (приведение к сегодняшним ценам)
+        if inf_enabled:
+            current_balance /= (1 + daily_inf)
+
+    return {
+        'horizon': relativedelta(current_date, start_date),
+        'initial': initial,
+        'capital': capital,
+        'current_balance': int(current_balance),
+        'payment': payment,
+        'total_taxes_paid': total_taxes_paid,
+        'period_payment': period_payment,
+        'deposit': deposit,
+        'income': income,
+        **kwargs
+    }
 
 
 
@@ -243,8 +246,8 @@ def get_balance_portfolio(
 
 def calculations(type_calc, **kwargs):
     if type_calc == 'gains_capital':
-        return get_gans_capital(**kwargs)
+        return get_gans_capital(type_calc=type_calc, **kwargs)
     elif type_calc == 'portfolio':
         return get_balance_portfolio(type_calc=type_calc, **kwargs)
     elif type_calc == 'time_to_goal':
-        return calculate_horizon_custom(**kwargs)
+        return calculate_horizon_custom(type_calc=type_calc, **kwargs)
