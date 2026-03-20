@@ -62,6 +62,25 @@ def format_years_genitive(horizon):
     return string
 
 
+def format_horizon(horizon):
+    def get_plural(n, forms):
+        if n % 10 == 1 and n % 100 != 11:
+            return forms[0]  # год / месяц
+        elif 2 <= n % 10 <= 4 and (n % 100 < 10 or n % 100 >= 20):
+            return forms[1]  # года / месяца
+        else:
+            return forms[2]  # лет / месяцев
+
+    res = []
+    if horizon.years:
+        res.append(f"{horizon.years} {get_plural(horizon.years, ['год', 'года', 'лет'])}")
+
+    if horizon.months:
+        res.append(f"{horizon.months} {get_plural(horizon.months, ['месяц', 'месяца', 'месяцев'])}")
+
+    return " ".join(res)
+
+
 def clear_field_percent(string: str):
     string = re.sub(r'[^\d.,]', '', str(string).replace('.', ','))
 

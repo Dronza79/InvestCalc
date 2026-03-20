@@ -61,6 +61,8 @@ def layout_right_note_invest(key, kwargs):
     layout = [[invest_header_output(**kwargs)], [invest_leader_output(**kwargs)]]
     if kwargs.get('initial'):
         layout += [[invest_liner_output(key='start', **kwargs)]]
+    if kwargs['type_calc'] == 'time_to_goal':
+        layout += [[invest_liner_output(key='capital', **kwargs)]]
     layout += [[invest_liner_output(key='contrib', **kwargs)], [invest_liner_output(key='received', **kwargs)]]
     if kwargs.get('tax_enabled'):
         layout += [[invest_liner_output(key='paid', **kwargs)]]

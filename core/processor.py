@@ -22,7 +22,7 @@ from dateutil.relativedelta import relativedelta
 
 
 def calculate_horizon_custom(
-        capital, payment, rate, period_profit, start_date,
+        capital, payment, rate, period_profit, start_date, ratio,
         period_payment, tax_enabled, inf_enabled, initial, **kwargs
 ):
     current_balance = initial
@@ -37,6 +37,7 @@ def calculate_horizon_custom(
     income = 0
     total_taxes_paid = 0
     deposit = 0
+    lost_balance = 0
 
     # Ежедневные коэффициенты
     daily_rate_simple = (1 + rate / 100) ** (1/365.25) - 1
@@ -73,21 +74,24 @@ def calculate_horizon_custom(
 
         # 4. Учет инфляции (приведение к сегодняшним ценам)
         if inf_enabled:
+            lost_balance += current_balance * daily_inf
             current_balance /= (1 + daily_inf)
 
     return {
         'horizon': relativedelta(current_date, start_date),
         'initial': initial,
         'capital': capital,
-        'current_balance': int(current_balance),
-        'payment': payment,
-        'total_taxes_paid': total_taxes_paid,
+        'current_balance': int(current_balance // ratio * ratio),
+        'payment': int(payment),
+        'total_taxes': int(total_taxes_paid // ratio * ratio),
         'period_payment': period_payment,
-        'deposit': deposit,
-        'income': income,
+        'deposit': int(deposit),
+        'income': int(income // ratio * ratio),
+        'tax_enabled': tax_enabled,
+        'inf_enabled': inf_enabled,
+        'inflation': int(lost_balance // ratio * ratio),
         **kwargs
     }
-
 
 
 def get_gans_capital(

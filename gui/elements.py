@@ -57,7 +57,7 @@ def additional_param():
         ]]),
         sg.Push(),
         sg.Frame('Кратность:', [[
-            sg.Combo(['1', '100', '500', '1000'], default_value=500, k='ratio', **combo_per)
+            sg.Combo(['1', '100', '500', '1000'], default_value=1, k='ratio', **combo_per)
         ]])
     ]], **main_frame)
 
@@ -220,7 +220,7 @@ def invest_leader_output(type_calc, **data):
     param = {'font': 'Courier 50 bold', 'pad': (5, 0)}
     if type_calc == 'time_to_goal':
         return sg.Col([[
-            sg.T(f'{format_years_genitive(data["horizon"])},', **param),
+            sg.T(f'{format_horizon(data["horizon"])},', **param),
         ]], expand_x=True, element_justification='c', pad=10)
     return sg.Col([[
         sg.Text(div_to_ranks(str(data["capital_gans"])), **param),
@@ -232,6 +232,7 @@ def invest_liner_output(key, **kwargs):
     param = {'font': 'Courier 18', 'pad': (5, 0)}  # 'background_color': 'red'}
     ADD = {
         'start': ('initial', 'Начальная сумма:'),
+        'capital': ('current_balance', 'Итоговый капитал:'),
         'contrib': ('deposit', 'Сумма пополнений:'),
         'received': ('income', 'Полученный доход:'),
         'paid': ('total_taxes', 'Уплачено налогов:'),
