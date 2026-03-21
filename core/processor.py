@@ -244,6 +244,7 @@ def get_balance_portfolio(
         "extra_needed": round(extra_needed, 2),
         "target_total": round(target_total_capital, 2),
         'internal_cash': internal_cash,
+        'total_internal_cash': round(target_total_capital - sum(totals.values()), 2),
         **actions, **totals, **kwargs
     }
 

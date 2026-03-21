@@ -113,7 +113,7 @@ def invest_header_output(type_calc, **data):
 
 
 def balance_header_output():
-    param = {'font': 'Courier 20', 'pad': (5, 0)}
+    param = {'font': 'Courier 16', 'pad': (5, 0)}
 
     return sg.Col([
         [sg.Text("Результаты ребалансировки", **param)],
@@ -142,7 +142,7 @@ def general_info(balance_capital, extra_needed, internal_cash, partial_repl, **k
         ]]
     if internal_cash:
         layout += [[
-            sg.Text(f"- Неучтенные средства:", p=0, **font_param),
+            sg.Text(f"- Свободные средства:", p=0, **font_param),
             sg.Push(),
             sg.Text(div_to_ranks(round(internal_cash, 2)), p=0, **font_param),
             sg.Text(f" \u20BD", p=0, **font_param),
@@ -170,7 +170,8 @@ def general_info(balance_capital, extra_needed, internal_cash, partial_repl, **k
 
 
 def operations_exchange_inst(data):
-    inst_param = {'font': 'Courier 16 bold'}
+    print(f'operations_exchange_inst({data=})')
+    inst_param = {'font': 'Courier 14 bold'}
     title_param = {'expand_x': True, 'justification': 'c', }
     relay = {
         'action_stocks': 'Акции',
@@ -182,13 +183,12 @@ def operations_exchange_inst(data):
         [sg.Text("Действия с биржевыми инструментами:", p=((0, 0), (10, 0)), **title_param, **inst_param)],
         [sg.HSeparator()]
     ]
-    for key in relay:
-        layout += [
-            [
-                sg.Text(f"{f'{relay[key]}:':.<20}", **inst_param),
-                sg.Text(get_text(data[key]), text_color=get_color(data[key]), p=(5, 0), **inst_param),
-            ]
-        ]
+    layout += [
+        [
+            sg.Text(f"{f'{relay[key]}:':.<20}", **inst_param),
+            sg.Text(get_text(data[key]), text_color=get_color(data[key]), p=(5, 0), **inst_param),
+        ] for key in relay if data[key] or data[f'percent_{key.replace("action_", "")}']
+    ]
     layout += [[sg.HSeparator()]]
 
     return sg.Col(layout)
@@ -202,13 +202,18 @@ def total_result_balance(target_total, **data):
         'total_stocks': 'Акции',
         'total_bonds': 'Облигации',
         'total_funds': 'Фонды',
-        'total_metals': 'Драгметалы'
+        'total_metals': 'Драгметалы',
+        'total_internal_cash': 'Свободные средства'
     }
     layout = [
         [sg.Text('Итоговое состояние портфеля:', p=((0, 0), (10, 0)), **title_param, **font_param)],
         [sg.HSeparator()]]
     layout += [
-        [sg.Text(f"- {relay[key]}: \t{div_to_ranks(int(data[key]))} \u20BD", p=0, **font_param)] for key in relay
+        [
+            sg.Text(f'- {relay[key]}:', **font_param),
+            sg.Push(),
+            sg.T(div_to_ranks(data[key]), **font_param),
+            sg.T("\u20BD", p=0, **font_param)] for key in relay if data[key]
     ]
     layout += [[sg.Text(f"Итоговый капитал: {div_to_ranks(target_total)} \u20BD",
                         p=((0, 0), (10, 0)), **total_param)]]
