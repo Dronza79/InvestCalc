@@ -1,4 +1,4 @@
-from core.processor import calculations
+from core.handlers import calculations
 from .models import update_chart
 from .windows import *
 
@@ -144,10 +144,10 @@ class MainView:
         if self.event not in lst_money + lst_percent:
             return
 
-        # if not self.value['balance_capital']:
-        #     self.window['balance_capital'].update(background_color='Salmon')
-        #     popup_errors_notification(self, ['ОШИБКА!!!'], ["Необходимо заполнить капитал!!!"])
-        #     return
+        if not self.value['balance_capital']:
+            self.window['balance_capital'].update(background_color='Salmon')
+            popup_errors_notification(self, ['ОШИБКА!!!'], ["Необходимо заполнить капитал!!!"])
+            return
 
         def func(string: str):
             res = (clear_field_digits(string).replace(' ', '').replace(',', '.'))
@@ -165,11 +165,7 @@ class MainView:
         tracked_val = func(self.value[self.event])
 
         if current_sum + tracked_val >= limit:
-            if self.event in lst_percent:
-                value = limit - current_sum
-                self.window[self.event].update(format_func(round(value,  2)))
-                return
-            else:
-                value = current_sum + tracked_val
-                self.window['balance_capital'].update(format_func(round(value,  2)))
+            value = limit - current_sum
+            self.window[self.event].update(format_func(round(value,  2)))
+            return
 
