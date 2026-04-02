@@ -24,6 +24,9 @@ class Period:
     def __str__(self):
         return self.__name
 
+    def __repr__(self):
+        return self.__str__()
+
     def __add__(self, other):
         # Позволяет делать: period + date
         if isinstance(other, date):
@@ -41,10 +44,6 @@ class Period:
         if isinstance(other, date):
             return other - self.__value
         return NotImplemented
-
-    @property
-    def duration(self):
-        return self.__value
 
     @classmethod
     def glp(cls, key=''):
@@ -67,6 +66,9 @@ class Period:
 
     def times_per_year(self):  # количество раз в году
         return int(1 / self.get_year_fraction())
+
+    def duration_days(self):
+        return 365.25 / self.times_per_year()
 
 
 # --- Функции для работы с графиком ---

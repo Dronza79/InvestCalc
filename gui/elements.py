@@ -274,6 +274,7 @@ def invest_liner_output(key, **kwargs):
     param = {'font': 'Courier 18', 'pad': (5, 0)}  # 'background_color': 'red'}
     ADD = {
         'start': ('initial', 'Начальная сумма:'),
+        'count': ('payment_counter', 'Количество платежей:'),
         'capital': ('current_balance', 'Итоговый капитал:'),
         'contrib': ('deposit', 'Сумма пополнений:'),
         'received': ('income', 'Полученный доход:'),
@@ -285,5 +286,5 @@ def invest_liner_output(key, **kwargs):
         sg.Text(f'{ADD[key][1]:.<35}', **param),
         # sg.Push(),
         sg.Text(div_to_ranks(kwargs[ADD[key][0]]), **param),
-        sg.T('\u20BD', **param),
+        sg.T('\u20BD', **param) if key != 'count' else sg.T(),
     ]], expand_x=True, element_justification='l', pad=10)

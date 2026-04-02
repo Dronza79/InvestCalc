@@ -66,6 +66,8 @@ def layout_right_note_invest(key, kwargs):
     layout += [
         [invest_liner_output(key='contrib', **kwargs)],
         [invest_liner_output(key='received', **kwargs)]]
+    if kwargs.get('payment_counter'):
+        layout += [[invest_liner_output(key='count', **kwargs)]]
     if kwargs.get('tax_enabled'):
         layout += [[invest_liner_output(key='paid', **kwargs)]]
     if kwargs.get('inf_enabled'):
