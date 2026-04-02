@@ -42,10 +42,10 @@ class MainView:
                     layout_right_note_invest if self.value['ltab'] == '-INVEST-'
                     else layout_right_note_balance
                  )
-
-                self.window.extend_layout(
-                    outres,
-                    [[layout_extend(f'OUTRES-{outres.metadata}', result)]])
+                if result:
+                    self.window.extend_layout(
+                        outres,
+                        [[layout_extend(f'OUTRES-{outres.metadata}', result)]])
 
                 # if self.value['ltab'] == '-INVEST-':
                 #     update_chart(self.window['-CANVAS-'], result['graph_data'])

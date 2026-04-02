@@ -145,7 +145,7 @@ def reformat_raw_input_data(
             'period_payment': payment_step,
             'period_profit': profit_step,
             'rate': float(rate.replace(',', '.')),
-            'ratio': int(ratio),
+            'ratio': ratio,
             'tax_enabled': tax_enabled,
             'inf_enabled': inf_enabled,
         }

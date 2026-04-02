@@ -50,12 +50,23 @@ class Period:
     def glp(cls, key=''):
         """
         glp = get list periods
-        :return:
+        :key: str варианты для начисления процентов и взноса платежей.
+        Для процентов нет еженедельно, для пополнений нет ежедневно
+        :return: List[Period]
         """
         return (
             [cls(k, v) for k, v in cls.__ADDICTION.items() if k != 'еженедельно'] if key == 'profit' else
             [cls(k, v) for k, v in cls.__ADDICTION.items() if k != 'ежедневно']
         )
+
+    def get_year_fraction(self):  # частица года
+        years = self.__value.years
+        months = self.__value.months
+        days = self.__value.days
+        return years + (months / 12) + (days / 365.25)
+
+    def times_per_year(self):  # количество раз в году
+        return int(1 / self.get_year_fraction())
 
 
 # --- Функции для работы с графиком ---
@@ -125,3 +136,24 @@ def update_chart(canvas_elem, data_list):
     fig.tight_layout()
 
     update_chart.current_canvas = draw_figure(canvas_elem.TKCanvas, fig)
+
+
+class Ratio:
+    __STEPS = [1, 100, 500, 1000]
+
+    def __init__(self, step):
+        self.__step = step
+
+    def __str__(self):
+        return str(self.__step)
+
+    def up(self, number):
+        return (number + self.__step - 1) // self.__step * self.__step
+
+    def down(self, number):
+        return number // self.__step * self.__step
+
+    @classmethod
+    def get_steps(cls):
+        return [cls(v) for v in cls.__STEPS]
+

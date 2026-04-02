@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 
 from core.utilites import *
-from .models import Period
+from .models import Period, Ratio
 from .params import *
 
 
@@ -49,6 +49,7 @@ def plane_profit_input():
 def additional_param():
     key_1 = 'tax_enabled'
     key_2 = 'inf_enabled'
+    steps = Ratio.get_steps()
     return sg.Frame('Дополнительные параметры:', [[
         sg.Col([[
             sg.Checkbox(f'{fields_input[key_1]}', key=key_1, **chbx),
@@ -57,7 +58,7 @@ def additional_param():
         ]]),
         sg.Push(),
         sg.Frame('Кратность:', [[
-            sg.Combo(['1', '100', '500', '1000'], default_value=1, k='ratio', **combo_per)
+            sg.Combo(steps, default_value=steps[0], k='ratio', **combo_per)
         ]])
     ]], **main_frame)
 
@@ -85,31 +86,55 @@ def periodicity_combo(key):
 
 
 def invest_header_output(type_calc, **data):
+    print(f'invest_header_output({type_calc=})')
     param = {'font': 'Courier 20', 'pad': (5, 0)}
+    layout = []
     if type_calc == 'time_to_goal':
-        return sg.Col([[
-            sg.Text('Что бы накопить ', **param),
-            sg.Text(div_to_ranks(str(data['capital'])), **param),
-            sg.T('\u20BD,', **param),
-        ], [
-            sg.T('откладывая ', **param),
-            sg.T(data['period_payment'], **param),
-            sg.T('по ', **param),
-            sg.Text(div_to_ranks(str(data['payment'])), **param),
-            sg.T('\u20BD', **param),
-        ], [
-            sg.Text('Вам потребуется:', **param),
-        ]], expand_x=True, element_justification='c', pad=20)
-    return sg.Col([[
-        sg.Text('Откладывая по', **param),
-        sg.Text(div_to_ranks(str(data['payment'])), **param),
-        sg.T('\u20BD', **param),
-        sg.T(data['period_payment'], **param)
-    ], [
-        sg.T('на протяжении', **param),
-        sg.T(f'{format_years_genitive(data["horizon"])},', **param),
-        sg.T('вы накопите:', **param)
-    ]], expand_x=True, element_justification='c', pad=20)
+        layout = [
+            [
+                sg.Text('Что бы накопить ', **param),
+                sg.Text(div_to_ranks(str(data['capital'])), **param),
+                sg.T('\u20BD,', **param),
+            ], [
+                sg.T('откладывая ', **param),
+                sg.T(data['period_payment'], **param),
+                sg.T('по ', **param),
+                sg.Text(div_to_ranks(str(data['payment'])), **param),
+                sg.T('\u20BD', **param),
+            ], [
+                sg.Text('Вам потребуется:', **param),
+            ]
+        ]
+    elif type_calc == 'gains_capital':
+        layout = [
+            [
+                sg.Text('Откладывая по', **param),
+                sg.Text(div_to_ranks(str(data['payment'])), **param),
+                sg.T('\u20BD', **param),
+                sg.T(data['period_payment'], **param)
+            ], [
+                sg.T('на протяжении', **param),
+                sg.T(f'{format_years_genitive(data["horizon"])},', **param),
+                sg.T('вы накопите:', **param)
+            ]
+        ]
+    elif type_calc == 'installment':
+        layout = [
+            [
+                sg.Text('Что бы накопить', **param),
+                sg.Text(div_to_ranks(str(data['capital'])), **param),
+                sg.T('\u20BD', **param),
+            ], [
+                sg.T('на протяжении', **param),
+                sg.T(f'{format_years_genitive(data["horizon"])},', **param),
+                sg.T('Вам', **param),
+            ], [
+                sg.T('необходимо откладывать', **param),
+                sg.T(data['period_payment'], **param),
+                sg.T('по:', **param),
+            ]
+        ]
+    return sg.Col(layout, expand_x=True, element_justification='c', pad=20)
 
 
 def balance_header_output():
@@ -170,7 +195,7 @@ def general_info(balance_capital, extra_needed, internal_cash, partial_repl, **k
 
 
 def operations_exchange_inst(data):
-    print(f'operations_exchange_inst({data=})')
+    # print(f'operations_exchange_inst({data=})')
     inst_param = {'font': 'Courier 14 bold'}
     title_param = {'expand_x': True, 'justification': 'c', }
     relay = {
@@ -223,14 +248,26 @@ def total_result_balance(target_total, **data):
 
 def invest_leader_output(type_calc, **data):
     param = {'font': 'Courier 50 bold', 'pad': (5, 0)}
+    layout = []
     if type_calc == 'time_to_goal':
-        return sg.Col([[
-            sg.T(f'{format_horizon(data["horizon"])},', **param),
-        ]], expand_x=True, element_justification='c', pad=10)
-    return sg.Col([[
-        sg.Text(div_to_ranks(str(data["capital_gans"])), **param),
-        sg.T('\u20BD', **param),
-    ]], expand_x=True, element_justification='c', pad=10)
+        layout = [
+            [sg.T(f'{format_horizon(data["horizon"])},', **param)]
+        ]
+    elif type_calc == 'gains_capital':
+        layout = [
+            [
+                sg.Text(div_to_ranks(str(data["capital_gans"])), **param),
+                sg.T('\u20BD', **param),
+            ]
+        ]
+    elif type_calc == 'installment':
+        layout = [
+            [
+                sg.Text(div_to_ranks(str(data["total_payment"])), **param),
+                sg.T('\u20BD', **param),
+            ]
+        ]
+    return sg.Col(layout, expand_x=True, element_justification='c', pad=10)
 
 
 def invest_liner_output(key, **kwargs):

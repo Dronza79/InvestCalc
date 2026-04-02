@@ -4,25 +4,94 @@ import re
 
 from dateutil.relativedelta import relativedelta
 
+from gui.models import Period
 
-# def get_month_payment():
-#     max_capital = int(input('Введите желаемый капитал: ').replace(' ', ''))
-#     annual_rate = float(input('Планируемую годовую ставку в процентах: '))
-#     rate = annual_rate / 1200
-#     horizon = re.findall(r'\d+', input('Введите срок в годах: '))
-#     per = int(horizon[0]) * 12 + int(12 / 10 * (int(horizon[-1]) if len(horizon) != 1 else 0))
-#     ratio = int(input('Укажите кратность значения: '))
-#     pmt = int((max_capital * rate / ((1 + rate) ** per - 1) + ratio - 1) // ratio * ratio)
-#     return {
-#         'payment': pmt,
-#         'month': per,
-#         'capital': max_capital,
-#         'annual_rate': annual_rate,
-#     }
+
+def get_month_payment(
+        capital,
+        initial,
+        horizon: relativedelta,
+        rate,
+        period_profit: Period,
+        period_payment: Period,
+        tax_enabled,
+        inf_enabled,
+        ratio,
+        **kwargs
+):
+    inf_rate = 0.08
+    tax_rate = 0.13
+    effective_rate = rate / 100
+
+    # 1. Определяем доли года для всех периодов (универсально)
+    T = Period('horizon', horizon).get_year_fraction()  # Общий срок в годах
+    m = period_profit.times_per_year()
+    t_pay = period_payment.get_year_fraction()  # Период платежа
+
+    # 2. Корректировка номинальной ставки (Налоги и Инфляция)
+    # Налог обычно уменьшает доходность по факту начисления
+    r_nom = effective_rate * (1 - tax_rate) if tax_enabled else effective_rate
+
+    # 3. Расчет Эффективной Годовой Ставки (EAR) с учетом частоты капитализации
+    # m - сколько раз в году начисляются проценты
+    ear = (1 + r_nom / m) ** m - 1
+
+    # Корректировка EAR на инфляцию по формуле Фишера (если нужно)
+    if inf_enabled:
+        ear = (1 + ear) / (1 + inf_rate) - 1
+
+    # 4. Расчет ставки на ОДИН ПЕРИОД ПЛАТЕЖА
+    # n - общее количество платежей
+    n = int(T / t_pay)
+    # r_p - ставка, которая, будучи примененной n раз, даст EAR
+    r_p = (1 + ear) ** t_pay - 1
+
+    # 5. Математика аннуитета
+    # Будущая стоимость начального капитала (FV_initial)
+    fv_initial = initial * ((1 + r_p) ** n)
+
+    # Целевая сумма, которую нужно добрать платежами
+    target_from_payments = capital - fv_initial
+
+    # Размер периодического платежа (PMT)
+    pmt = ratio.up(target_from_payments * r_p / ((1 + r_p) ** n - 1))
+
+    # 6. Итоговые показатели
+    total_deposited_extra = pmt * n
+    total_invested = initial + total_deposited_extra
+    total_profit = capital - total_invested
+
+    # Оценка инфляционных потерь (на сколько обесценился бы 'capital' за это время)
+    inf_loss = capital - (capital / ((1 + inf_rate) ** T)) if inf_enabled else 0
+
+    # Налоги (упрощенная оценка выплаченного за весь срок)
+    tax_paid = 0
+    if tax_enabled:
+        # Приблизительный расчет: (Доход / (1-tax)) * tax
+        # tax_paid = (total_profit / (1 - tax_rate)) * tax_rate
+        tax_paid = total_profit * tax_rate
+
+    return {
+        "total_payment": pmt,  # round(pmt, 2),
+        'horizon': horizon,
+        "rate": rate,
+        'count_pay': n,
+        "capital": capital,
+        "current_balance": ratio.down(total_deposited_extra + total_profit),  #round(total_deposited_extra + total_profit, 2),
+        'initial': initial,
+        'tax_enabled': tax_enabled,
+        'inf_enabled': inf_enabled,
+        'period_payment': period_payment,
+        "deposit": ratio.up(total_deposited_extra),  # round(total_deposited_extra, 2),
+        "income": ratio.down(total_profit),  #round(total_profit, 2),
+        "total_taxes": ratio.up(tax_paid),  #round(tax_paid, 2),
+        "inflation": ratio.up(inf_loss),  #round(inf_loss, 2),
+        **kwargs
+    }
 
 
 def calculate_horizon_custom(
-        capital, payment, rate, period_profit, start_date,
+        capital, payment, rate, period_profit, start_date, ratio,
         period_payment, tax_enabled, inf_enabled, initial, **kwargs
 ):
     current_balance = initial
@@ -39,8 +108,8 @@ def calculate_horizon_custom(
     deposit = 0
 
     # Ежедневные коэффициенты
-    daily_rate_simple = (1 + rate / 100) ** (1/365.25) - 1
-    daily_inf = (1 + 8 / 100) ** (1/365.25) - 1
+    daily_rate_simple = (1 + rate / 100) ** (1 / 365.25) - 1
+    daily_inf = (1 + 8 / 100) ** (1 / 365.25) - 1
 
     while current_balance < capital:
         current_date += relativedelta(days=1)
@@ -79,15 +148,14 @@ def calculate_horizon_custom(
         'horizon': relativedelta(current_date, start_date),
         'initial': initial,
         'capital': capital,
-        'current_balance': int(current_balance),
+        'current_balance': ratio.down(current_balance),
         'payment': payment,
-        'total_taxes_paid': total_taxes_paid,
+        'total_taxes_paid': ratio.up(total_taxes_paid),
         'period_payment': period_payment,
-        'deposit': deposit,
-        'income': income,
+        'deposit': ratio.up(deposit),
+        'income': ratio.down(income),
         **kwargs
     }
-
 
 
 def get_gans_capital(
@@ -168,12 +236,12 @@ def get_gans_capital(
     inflation = current_capital - real_wealth
 
     result = {
-        "capital_gans": round((current_capital // ratio) * ratio, 2),  # Итоговый капитал
-        "capital_inflat": round((real_wealth // ratio) * ratio, 2),  # Капитал с инфляцией
-        "inflation": round((inflation // ratio) * ratio, 2),  # Инфляцией
-        "total_taxes": round(total_taxes_paid, 2),  # Итого налоги
-        "income": round(total_interest_earned, 2),  # Доход сложного процента
-        "deposit": round(total_invested - initial, 2),  # Инвестировано
+        "capital_gans": ratio.down(current_capital),  # Итоговый капитал
+        "capital_inflat": ratio.down(real_wealth),  # Капитал с инфляцией
+        "inflation": ratio.up(inflation),  # Инфляцией
+        "total_taxes": ratio.up(total_taxes_paid),  # Итого налоги
+        "income": ratio.down(total_interest_earned),  # Доход сложного процента
+        "deposit": ratio.down(total_invested - initial),  # Инвестировано
         "graph_data": [years_list, invested_list, interest_list],  # Данные для Графика
         "table_data": payment_registry,  # Данные для Таблицы
         'start_date': start_date,
@@ -251,3 +319,5 @@ def calculations(type_calc, **kwargs):
         return get_balance_portfolio(type_calc=type_calc, **kwargs)
     elif type_calc == 'time_to_goal':
         return calculate_horizon_custom(type_calc=type_calc, **kwargs)
+    elif type_calc == 'installment':
+        return get_month_payment(type_calc=type_calc, **kwargs)
