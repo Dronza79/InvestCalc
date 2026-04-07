@@ -10,7 +10,7 @@ from gui.models import Period
 def get_month_payment(
         capital,
         initial,
-        horizon: relativedelta,
+        horizon: Period,
         rate,
         period_profit: Period,
         period_payment: Period,
@@ -24,7 +24,7 @@ def get_month_payment(
     effective_rate = rate / 100
 
     # 1. Определяем доли года для всех периодов (универсально)
-    T = Period('horizon', horizon).get_year_fraction()  # Общий срок в годах
+    T = horizon.get_year_fraction()  # Общий срок в годах
     m = period_profit.times_per_year()
     t_pay = period_payment.get_year_fraction()  # Период платежа
 
@@ -86,6 +86,7 @@ def get_month_payment(
         "income": ratio.down(total_profit),  #round(total_profit, 2),
         "total_taxes": ratio.up(tax_paid),  #round(tax_paid, 2),
         "inflation": ratio.up(inf_loss),  #round(inf_loss, 2),
+        "capital_inf": ratio.down(capital - inf_loss),  #round(inf_loss, 2),
         **kwargs
     }
 
@@ -94,8 +95,7 @@ def calculate_horizon_custom(
         capital, payment, rate, period_profit, start_date, ratio,
         period_payment, tax_enabled, inf_enabled, initial, **kwargs
 ):
-    deposit = payment
-    current_balance = initial + deposit
+    current_balance = initial
     current_date = start_date
 
     # Даты следующих событий
@@ -106,15 +106,16 @@ def calculate_horizon_custom(
     annual_profit_for_tax = 0
     income = 0
     total_taxes_paid = 0
+    deposit = 0
 
     # Ежедневные коэффициенты
-    # daily_rate_simple = (1 + rate / 100) ** (1 / 365.25) - 1
-    daily_rate_simple = rate / 36525
+    daily_rate_simple = (1 + rate / 100) ** (1 / 365.25) - 1
     daily_inf = (1 + 8 / 100) ** (1 / 365.25) - 1
+
+    result = {}
 
     while current_balance < capital:
         current_date += relativedelta(days=1)
-
         is_tax_day = (current_date.month == 12 and current_date.day == 31)
 
         # 1. Начисление дохода (period_profit)
@@ -142,12 +143,20 @@ def calculate_horizon_custom(
             total_taxes_paid += tax
             annual_profit_for_tax = 0
 
-        # 4. Учет инфляции (приведение к сегодняшним ценам)
-        if inf_enabled:
-            current_balance /= (1 + daily_inf)
+    horizon = Period('horizon', relativedelta(current_date, start_date))
+    result['horizon'] = horizon
 
-    return {
-        'horizon': relativedelta(current_date, start_date),
+        # 4. Учет инфляции (приведение к сегодняшним ценам)
+    if inf_enabled:
+        # current_balance /= (1 + daily_inf)
+        capital_inf = (current_balance / ((1 + 0.08) ** horizon.get_year_fraction()))
+        inflation = current_balance - capital_inf
+        result.update({'capital_inf': capital_inf, 'inflation': inflation})
+
+
+    result.update({
+        'horizon': horizon,
+        'start_date': datetime.datetime.now().date(),
         'initial': initial,
         'capital': capital,
         'current_balance': ratio.down(current_balance),
@@ -156,61 +165,58 @@ def calculate_horizon_custom(
         'period_payment': period_payment,
         'deposit': ratio.up(deposit),
         'income': ratio.down(income),
-        "tax_enabled": tax_enabled,
-        "inf_enabled": inf_enabled,
-        **kwargs
-    }
+        'tax_enabled': tax_enabled,
+        'inf_enabled': inf_enabled,
+    })
+
+    return {**result, **kwargs}
 
 
 def get_gans_capital(
         start_date, end_date, initial, payment, period_payment,
         tax_enabled, inf_enabled, ratio, rate, period_profit,
-        horizon: relativedelta, **kwargs
+        horizon: Period, **kwargs
 ):
-    # payment_step = period_payment.duration_days
-    # profit_step = period_profit.duration_days
+    payment_step = period_payment.duration
+    profit_step = period_profit.duration
+    current_capital = initial
+    daily_rate_simple = rate / 100 / 365
+
+    payment_date = start_date + payment_step
+    profit_date = start_date + profit_step
+
+    profit_days = (profit_date - start_date).days
 
     total_invested = initial
-    current_capital = total_invested
-    current_date = start_date
-    payment_date = start_date
-    profit_date = start_date + period_profit
-    old_profit_date = start_date
-
-    daily_rate_simple = rate / 36525
-
-    # payment_date = start_date + payment_step
-    # profit_date = start_date + profit_step
-
-    # profit_days = (profit_date - start_date).days
-
     total_interest_earned = 0
     total_taxes_paid = 0
     annual_profit_for_tax = 0
 
     years_list = [0]
-    invested_list = [total_invested]
+    invested_list = [initial]
     interest_list = [0.0]
     payment_registry = []
     payment_counter = 0
+    current_date = start_date
 
     while current_date <= end_date:
 
         # Начисление процентов
         if current_date == profit_date or current_date == end_date:
-            current_past_rate = daily_rate_simple * (current_date - old_profit_date).days
+            current_past_rate = (
+                daily_rate_simple * profit_days if current_date != end_date else
+                (end_date - (profit_date - profit_step)).days * daily_rate_simple
+            )
             profit = current_capital * current_past_rate
             current_capital += profit
             total_interest_earned += profit
             annual_profit_for_tax += profit
-            old_profit_date = profit_date
-            profit_date += period_profit
+            profit_date += profit_step
 
         # Пополнение капитала
-        if current_date == payment_date and current_date != end_date:
+        if current_date == payment_date:
             current_capital += payment
-            payment_date += period_payment
-
+            payment_date += payment_step
             payment_counter += 1
             total_invested += payment
             payment_registry.append([
@@ -237,17 +243,16 @@ def get_gans_capital(
                 interest_list.append(round(total_interest_earned, 2))
 
         current_date += datetime.timedelta(days=1)
-
+    result = {}
     # Инфляция
-    exact_years = horizon.years + (horizon.months / 12.0) + (horizon.days / 365.25)
-    real_wealth = current_capital / (1.08 ** exact_years) if inf_enabled else current_capital
-    inflation = current_capital - real_wealth
+    exact_years = horizon.get_year_fraction()
+    if inf_enabled:
+        real_wealth = current_capital / (1.08 ** exact_years)
+        result['capital_inf'] = ratio.down(real_wealth)
+        result['inflation'] = ratio.up(current_capital - real_wealth)
 
-    result = {
-        "capital_gans": ratio.down(current_capital),  # Итоговый капитал
-        "capital_inflat": ratio.down(real_wealth),  # Капитал с инфляцией
-        "inflation": ratio.up(inflation),  # Инфляцией
-        'payment_counter': payment_counter,
+    result.update({
+        "current_balance": ratio.down(current_capital),  # Итоговый капитал
         "total_taxes": ratio.up(total_taxes_paid),  # Итого налоги
         "income": ratio.down(total_interest_earned),  # Доход сложного процента
         "deposit": ratio.down(total_invested - initial),  # Инвестировано
@@ -261,7 +266,7 @@ def get_gans_capital(
         'initial': initial,
         'tax_enabled': tax_enabled,
         'inf_enabled': inf_enabled,
-    }
+    })
 
     return {**result, **kwargs}
 

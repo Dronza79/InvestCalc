@@ -250,23 +250,17 @@ def invest_leader_output(type_calc, **data):
     param = {'font': 'Courier 50 bold', 'pad': (5, 0)}
     layout = []
     if type_calc == 'time_to_goal':
-        layout = [
-            [sg.T(f'{format_horizon(data["horizon"])},', **param)]
-        ]
+        layout = [[sg.T(f'{format_horizon(data["horizon"])}', **param)]]
     elif type_calc == 'gains_capital':
-        layout = [
-            [
-                sg.Text(div_to_ranks(str(data["capital_gans"])), **param),
+        layout = [[
+                sg.Text(div_to_ranks(str(data["current_balance"])), **param),
                 sg.T('\u20BD', **param),
-            ]
-        ]
+            ]]
     elif type_calc == 'installment':
-        layout = [
-            [
+        layout = [[
                 sg.Text(div_to_ranks(str(data["total_payment"])), **param),
                 sg.T('\u20BD', **param),
-            ]
-        ]
+            ]]
     return sg.Col(layout, expand_x=True, element_justification='c', pad=10)
 
 
@@ -274,17 +268,48 @@ def invest_liner_output(key, **kwargs):
     param = {'font': 'Courier 18', 'pad': (5, 0)}  # 'background_color': 'red'}
     ADD = {
         'start': ('initial', 'Начальная сумма:'),
-        'count': ('payment_counter', 'Количество платежей:'),
         'capital': ('current_balance', 'Итоговый капитал:'),
         'contrib': ('deposit', 'Сумма пополнений:'),
-        'received': ('income', 'Полученный доход:'),
-        'paid': ('total_taxes', 'Уплачено налогов:'),
-        'inf': ('inflation', 'Инфляция:'),
+        'received': ('income', 'Ожидаемый доход:'),
+        'paid': ('total_taxes', 'Плановые налоги:'),
+        'inf': ('inflation', 'Потери от инфляции:'),
 
     }
     return sg.Col([[
         sg.Text(f'{ADD[key][1]:.<35}', **param),
         # sg.Push(),
         sg.Text(div_to_ranks(kwargs[ADD[key][0]]), **param),
-        sg.T('\u20BD', **param) if key != 'count' else sg.T(),
+        sg.T('\u20BD', **param),
     ]], expand_x=True, element_justification='l', pad=10)
+
+
+def invest_inf_output(capital_inf, horizon, start_date, **kwargs):
+    param = {'font': 'Courier 14 bold', 'pad': (5, 0)}  # 'background_color': 'red'}
+    left_col = sg.Col([[sg.Image(info_ico)]])
+    # right_col = sg.Col([
+    #     [
+    #         sg.Text(f'Покупательная способность капитала через {format_horizon(horizon)}', **param),
+    #     ], [
+    #         sg.Text(f'составит покупательной способности суммы {div_to_ranks(capital_inf)} \u20BD', **param),
+    #     ], [
+    #         sg.Text(f'с учетом нынешних цен по состоянию на {start_date:%d.%m.%Y} г.', **param),
+    #     ]])
+    right_col = sg.Col([
+        [
+            sg.Text(f'При годовой инфляции в размере 8% через {format_horizon(horizon)}', **param),
+        ], [
+            sg.Text(f'можно будет приобрести товаров и услуг столько же, сколько', **param),
+        ], [
+            sg.Text(f'можно преобрести в настоящее время на сумму {div_to_ranks(capital_inf)} \u20BD', **param),
+        ], [
+            sg.Text(f'с учетом цен по состоянию на {start_date:%d.%m.%Y} г.', **param),
+        ]])
+    return sg.Frame('', [[left_col, right_col]],
+                    expand_x=True, element_justification='l', pad=10,
+                    # relief=sg.RELIEF_RAISED   # выдавлено
+                    # relief=sg.RELIEF_SUNKEN   # вдавлено
+                    # relief=sg.RELIEF_FLAT     # чисто
+                    # relief=sg.RELIEF_RIDGE    # выгнутый бортик
+                    # relief=sg.RELIEF_GROOVE   # вогнутый бортик
+                    relief=sg.RELIEF_SOLID  # тольстая рамка
+                    )

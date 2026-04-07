@@ -1,5 +1,5 @@
 import re
-from datetime import datetime as dd, date
+from datetime import datetime as dd
 
 from dateutil.relativedelta import relativedelta
 
@@ -51,13 +51,13 @@ def format_digit_years(digit):  # Именительный подеж
 
 
 def format_years_genitive(horizon):
-    string = f'{horizon.years} лет'
+    string = f'{horizon.year} лет'
 
-    if horizon.years % 10 == 1 and horizon.years % 100 != 11:
-        string = f'{horizon.years} года'
+    if horizon.year % 10 == 1 and horizon.year % 100 != 11:
+        string = f'{horizon.year} года'
 
-    if horizon.months:
-        string += f' {horizon.months} месяцев'
+    if horizon.month:
+        string += f' {horizon.month} месяцев'
 
     return string
 
@@ -72,11 +72,11 @@ def format_horizon(horizon):
             return forms[2]  # лет / месяцев
 
     res = []
-    if horizon.years:
-        res.append(f"{horizon.years} {get_plural(horizon.years, ['год', 'года', 'лет'])}")
+    if horizon.year:
+        res.append(f"{horizon.year} {get_plural(horizon.year, ['год', 'года', 'лет'])}")
 
-    if horizon.months:
-        res.append(f"{horizon.months} {get_plural(horizon.months, ['месяц', 'месяца', 'месяцев'])}")
+    if horizon.month:
+        res.append(f"{horizon.month} {get_plural(horizon.month, ['месяц', 'месяца', 'месяцев'])}")
 
     return " ".join(res)
 
@@ -154,15 +154,14 @@ def reformat_raw_input_data(
             start_date = dd.now().date()
             try:
                 end_date = dd.strptime(horizon, '%d.%m.%Y').date()
-                horizon = relativedelta(end_date, start_date)
+                horizon = Period('horizon', relativedelta(end_date, start_date))
             except ValueError:
                 y = float(horizon.replace(',', '.'))
                 m = (y - int(y)) * 12
                 d = (m - int(m)) * 30.44
-                horizon = relativedelta(years=int(y), months=int(m), days=int(d))
+                horizon = Period('horizon', relativedelta(years=int(y), months=int(m), days=int(d)))
                 end_date = start_date + horizon
-            for key, data in {'horizon': horizon, 'start_date': start_date, 'end_date': end_date}.items():
-                valid_data[key] = data
+            valid_data.update({'horizon': horizon, 'start_date': start_date, 'end_date': end_date})
         else:
             valid_data['start_date'] = dd.now().date()
 
