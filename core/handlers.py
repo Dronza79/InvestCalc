@@ -1,282 +1,167 @@
-import datetime
-import math
-import re
-
 from dateutil.relativedelta import relativedelta
 
+from core.config import *
 from gui.models import Period
 
 
-def get_month_payment(
-        capital,
-        initial,
-        horizon: Period,
-        rate,
-        period_profit: Period,
-        period_payment: Period,
-        tax_enabled,
-        inf_enabled,
-        ratio,
-        **kwargs
-):
-    inf_rate = 0.08
-    tax_rate = 0.13
-    effective_rate = rate / 100
+def calculate_tax(profit_raw: float, year_profit: float) -> float:
+    """Расчет прогрессивного налога."""
+    if year_profit >= TAX_THRESHOLD:
+        return profit_raw * TAX_HIGH
 
-    # 1. Определяем доли года для всех периодов (универсально)
-    T = horizon.get_year_fraction()  # Общий срок в годах
-    m = period_profit.times_per_year()
-    t_pay = period_payment.get_year_fraction()  # Период платежа
+    if year_profit + profit_raw > TAX_THRESHOLD:
+        low_part = TAX_THRESHOLD - year_profit
+        high_part = profit_raw - low_part
+        return (low_part * TAX_LOW) + (high_part * TAX_HIGH)
 
-    # 2. Корректировка номинальной ставки (Налоги и Инфляция)
-    # Налог обычно уменьшает доходность по факту начисления
-    r_nom = effective_rate * (1 - tax_rate) if tax_enabled else effective_rate
+    return profit_raw * TAX_LOW
 
-    # 3. Расчет Эффективной Годовой Ставки (EAR) с учетом частоты капитализации
-    # m - сколько раз в году начисляются проценты
-    ear = (1 + r_nom / m) ** m - 1
 
-    # Корректировка EAR на инфляцию по формуле Фишера (если нужно)
+def calculate_gains(start_date, end_date, initial, payment, rate, period_payment,
+                    period_profit, tax_enabled, inf_enabled, ratio, **kwargs):
+    """
+    Основной движок с логикой капитализации и налогов.
+    """
+    result = {}
+    current_balance = float(initial)
+    total_deposit = float(initial)
+    total_income = 0.0
+    total_taxes = 0.0
+
+    year_profit = 0.0
+    current_year = start_date.year
+
+    # Указатели на даты следующих событий
+    next_payment_date = start_date + period_payment
+    next_profit_date = start_date + period_profit
+    curr_date = start_date
+
+    # Эффективная ставка за один период начисления
+    # Используем метод класса Period для определения частоты в году
+    rate_per_period = (rate / 100) / period_profit.times_per_year()
+
+    while curr_date < end_date:
+        curr_date = min(next_payment_date, next_profit_date, end_date)
+
+        if curr_date > end_date:
+            break
+
+        # 1. Начисление процентов (Капитализация)
+        if curr_date == next_profit_date:
+            profit_raw = current_balance * rate_per_period
+
+            if tax_enabled:
+                if curr_date.year != current_year:
+                    year_profit = 0.0
+                    current_year = curr_date.year
+
+                tax = calculate_tax(profit_raw, year_profit)
+                profit_after_tax = profit_raw - tax
+                total_taxes += tax
+                year_profit += profit_raw
+            else:
+                profit_after_tax = profit_raw
+
+            # КАПИТАЛИЗАЦИЯ: прибавляем доход к телу баланса
+            current_balance += profit_after_tax
+            total_income += profit_after_tax
+            next_profit_date += period_profit
+
+        # 2. Пополнение счета
+        if curr_date == next_payment_date:
+            current_balance += payment
+            total_deposit += payment
+            next_payment_date += period_payment
+
+    # 3. Учет инфляции (дисконтирование итогового капитала)
     if inf_enabled:
-        ear = (1 + ear) / (1 + inf_rate) - 1
+        years = (end_date - start_date).days / 365.25
+        capital_inf = current_balance / ((1 + INF_RATE) ** years)
+        result['capital_inf'] = capital_inf
+        result['inflation'] = current_balance - capital_inf
 
-    # 4. Расчет ставки на ОДИН ПЕРИОД ПЛАТЕЖА
-    # n - общее количество платежей
-    n = int(T / t_pay)
-    # r_p - ставка, которая, будучи примененной n раз, даст EAR
-    r_p = (1 + ear) ** t_pay - 1
+    result.update({
+        "current_balance": ratio.down(current_balance),
+        "deposit": ratio.down(total_deposit),
+        "income": ratio.down(total_income),
+        "total_taxes": ratio.up(total_taxes),
 
-    # 5. Математика аннуитета
-    # Будущая стоимость начального капитала (FV_initial)
-    fv_initial = initial * ((1 + r_p) ** n)
+    })
 
-    # Целевая сумма, которую нужно добрать платежами
-    target_from_payments = capital - fv_initial
+    return {**result, **kwargs}
 
-    # Размер периодического платежа (PMT)
-    pmt = ratio.up(target_from_payments * r_p / ((1 + r_p) ** n - 1))
 
-    # 6. Итоговые показатели
-    total_deposited_extra = pmt * n
-    total_invested = initial + total_deposited_extra
-    total_profit = capital - total_invested
+def main_invest_calc(type_calc, **kwargs):
+    print(f'main_invest_calc({type_calc=}, {kwargs=})')
 
-    # Оценка инфляционных потерь (на сколько обесценился бы 'capital' за это время)
-    inf_loss = capital - (capital / ((1 + inf_rate) ** T)) if inf_enabled else 0
+    capital = kwargs.get('capital')
+    start_date = kwargs.get('start_date')
+    ratio = kwargs.get('ratio')
 
-    # Налоги (упрощенная оценка выплаченного за весь срок)
-    tax_paid = 0
-    if tax_enabled:
-        # Приблизительный расчет: (Доход / (1-tax)) * tax
-        # tax_paid = (total_profit / (1 - tax_rate)) * tax_rate
-        tax_paid = total_profit * tax_rate
+    res = {}
+
+    if type_calc == 'gains_capital':
+        res = calculate_gains(**kwargs)
+
+    elif type_calc == 'installment':
+        low, high = 0, 10_000_000
+
+        for _ in range(25):
+            mid = (low + high) / 2
+            sim = calculate_gains(payment=mid, **kwargs)
+
+            if sim['current_balance'] < capital:
+                low = mid
+            else:
+                high = mid
+
+        res = calculate_gains(payment=ratio.up(high), **kwargs)
+        res['payment'] = ratio.up(high)
+
+    elif type_calc == 'time_to_goal':
+        low, high = 0, 50 * 365
+
+        for _ in range(25):
+            mid = (low + high) // 2
+            temp_end = start_date + relativedelta(days=mid)
+            sim = calculate_gains(end_date=temp_end, **kwargs)
+
+            if sim['current_balance'] < capital:
+                low = mid
+            else:
+                high = mid
+
+        end_date = start_date + relativedelta(days=high)
+        res = calculate_gains(end_date=end_date, **kwargs)
+
+        res['horizon'] = Period('horizon', relativedelta(end_date, start_date))
+        res['end_date'] = end_date
+
+    elif type_calc == 'percentage':
+        low, high = 0.0, 500.0
+
+        for _ in range(25):
+            mid = (low + high) / 2
+            sim = calculate_gains(rate=mid, **kwargs)
+
+            if sim['current_balance'] < capital:
+                low = mid
+            else:
+                high = mid
+
+        res = calculate_gains(rate=round(high, 2), **kwargs)
+        print(f'rate={high} {res=}')
+        res['rate'] = round(high, 2)
 
     return {
-        "total_payment": pmt,  # round(pmt, 2),
-        'horizon': horizon,
-        "rate": rate,
-        'count_pay': n,
-        "capital": capital,
-        "current_balance": ratio.down(total_deposited_extra + total_profit),  #round(total_deposited_extra + total_profit, 2),
-        'initial': initial,
-        'tax_enabled': tax_enabled,
-        'inf_enabled': inf_enabled,
-        'period_payment': period_payment,
-        "deposit": ratio.up(total_deposited_extra),  # round(total_deposited_extra, 2),
-        "income": ratio.down(total_profit),  #round(total_profit, 2),
-        "total_taxes": ratio.up(tax_paid),  #round(tax_paid, 2),
-        "inflation": ratio.up(inf_loss),  #round(inf_loss, 2),
-        "capital_inf": ratio.down(capital - inf_loss),  #round(inf_loss, 2),
-        **kwargs
+        'type_calc': type_calc,
+        **kwargs,
+        **res,
     }
 
 
-def calculate_horizon_custom(
-        capital, payment, rate, period_profit, start_date, ratio,
-        period_payment, tax_enabled, inf_enabled, initial, **kwargs
-):
-    current_balance = initial
-    current_date = start_date
-
-    # Даты следующих событий
-    next_payment = start_date + period_payment
-    profit_date = start_date + period_profit
-
-    profit_days = (profit_date - start_date).days
-    annual_profit_for_tax = 0
-    income = 0
-    total_taxes_paid = 0
-    deposit = 0
-
-    # Ежедневные коэффициенты
-    daily_rate_simple = (1 + rate / 100) ** (1 / 365.25) - 1
-    daily_inf = (1 + 8 / 100) ** (1 / 365.25) - 1
-
-    result = {}
-
-    while current_balance < capital:
-        current_date += relativedelta(days=1)
-        is_tax_day = (current_date.month == 12 and current_date.day == 31)
-
-        # 1. Начисление дохода (period_profit)
-        if current_date == profit_date:
-            current_past_rate = daily_rate_simple * profit_days
-            profit = current_balance * current_past_rate
-            current_balance += profit
-            income += profit
-            annual_profit_for_tax += profit
-            profit_date += period_profit
-
-        # 2 Пополнение баланса
-        if current_date == next_payment:
-            current_balance += payment
-            deposit += payment
-            next_payment += period_payment
-
-        # 3. Уплата налога за год
-        if is_tax_day and tax_enabled:
-            if annual_profit_for_tax <= 2.4e6:
-                tax = annual_profit_for_tax * 0.13
-            else:
-                tax = (2.4e6 * 0.13) + (annual_profit_for_tax - 2.4e6) * 0.15
-            current_balance -= tax
-            total_taxes_paid += tax
-            annual_profit_for_tax = 0
-
-    horizon = Period('horizon', relativedelta(current_date, start_date))
-    result['horizon'] = horizon
-
-        # 4. Учет инфляции (приведение к сегодняшним ценам)
-    if inf_enabled:
-        # current_balance /= (1 + daily_inf)
-        capital_inf = (current_balance / ((1 + 0.08) ** horizon.get_year_fraction()))
-        inflation = current_balance - capital_inf
-        result.update({'capital_inf': capital_inf, 'inflation': inflation})
-
-
-    result.update({
-        'horizon': horizon,
-        'start_date': datetime.datetime.now().date(),
-        'initial': initial,
-        'capital': capital,
-        'current_balance': ratio.down(current_balance),
-        'payment': payment,
-        'total_taxes': ratio.up(total_taxes_paid),
-        'period_payment': period_payment,
-        'deposit': ratio.up(deposit),
-        'income': ratio.down(income),
-        'tax_enabled': tax_enabled,
-        'inf_enabled': inf_enabled,
-    })
-
-    return {**result, **kwargs}
-
-
-def get_gans_capital(
-        start_date, end_date, initial, payment, period_payment,
-        tax_enabled, inf_enabled, ratio, rate, period_profit,
-        horizon: Period, **kwargs
-):
-    payment_step = period_payment.duration
-    profit_step = period_profit.duration
-    current_capital = initial
-    daily_rate_simple = rate / 100 / 365
-
-    payment_date = start_date + payment_step
-    profit_date = start_date + profit_step
-
-    profit_days = (profit_date - start_date).days
-
-    total_invested = initial
-    total_interest_earned = 0
-    total_taxes_paid = 0
-    annual_profit_for_tax = 0
-
-    years_list = [0]
-    invested_list = [initial]
-    interest_list = [0.0]
-    payment_registry = []
-    payment_counter = 0
-    current_date = start_date
-
-    while current_date <= end_date:
-
-        # Начисление процентов
-        if current_date == profit_date or current_date == end_date:
-            current_past_rate = (
-                daily_rate_simple * profit_days if current_date != end_date else
-                (end_date - (profit_date - profit_step)).days * daily_rate_simple
-            )
-            profit = current_capital * current_past_rate
-            current_capital += profit
-            total_interest_earned += profit
-            annual_profit_for_tax += profit
-            profit_date += profit_step
-
-        # Пополнение капитала
-        if current_date == payment_date:
-            current_capital += payment
-            payment_date += payment_step
-            payment_counter += 1
-            total_invested += payment
-            payment_registry.append([
-                payment_counter, current_date, round(total_invested, 2),
-                round(total_interest_earned, 2), round(current_capital, 2)
-            ])
-
-        # 4. Налоги и годовая статистика
-        is_tax_day = (current_date.month == 12 and current_date.day == 31)
-        if is_tax_day and tax_enabled:
-            if annual_profit_for_tax <= 2.4e6:
-                tax = annual_profit_for_tax * 0.13
-            else:
-                tax = (2.4e6 * 0.13) + (annual_profit_for_tax - 2.4e6) * 0.15
-            current_capital -= tax
-            total_taxes_paid += tax
-            annual_profit_for_tax = 0
-
-        if is_tax_day or current_date == end_date:
-            x_diff = relativedelta(current_date, start_date).years
-            if x_diff > 0 and x_diff not in years_list:
-                years_list.append(x_diff)
-                invested_list.append(round(total_invested, 2))
-                interest_list.append(round(total_interest_earned, 2))
-
-        current_date += datetime.timedelta(days=1)
-    result = {}
-    # Инфляция
-    exact_years = horizon.get_year_fraction()
-    if inf_enabled:
-        real_wealth = current_capital / (1.08 ** exact_years)
-        result['capital_inf'] = ratio.down(real_wealth)
-        result['inflation'] = ratio.up(current_capital - real_wealth)
-
-    result.update({
-        "current_balance": ratio.down(current_capital),  # Итоговый капитал
-        "total_taxes": ratio.up(total_taxes_paid),  # Итого налоги
-        "income": ratio.down(total_interest_earned),  # Доход сложного процента
-        "deposit": ratio.down(total_invested - initial),  # Инвестировано
-        # "graph_data": [years_list, invested_list, interest_list],  # Данные для Графика
-        # "table_data": payment_registry,  # Данные для Таблицы
-        'start_date': start_date,
-        'end_date': end_date,
-        'horizon': horizon,
-        'payment': payment,
-        'period_payment': period_payment,
-        'initial': initial,
-        'tax_enabled': tax_enabled,
-        'inf_enabled': inf_enabled,
-    })
-
-    return {**result, **kwargs}
-
-
-def get_balance_portfolio(
-        balance_capital, stocks, bonds, funds, metals,
-        percent_stocks, percent_bonds, percent_funds,
-        percent_metals, partial_repl, pay_enabled,
-        **kwargs
-):
+def get_balance_portfolio(balance_capital, stocks, bonds, funds, metals, percent_stocks, percent_bonds,
+                          percent_funds, percent_metals, partial_repl, pay_enabled, **kwargs):
     invested_sum = stocks + bonds + funds + metals
     internal_cash = balance_capital - invested_sum
 
@@ -327,11 +212,7 @@ def get_balance_portfolio(
 
 
 def calculations(type_calc, **kwargs):
-    if type_calc == 'gains_capital':
-        return get_gans_capital(type_calc=type_calc, **kwargs)
+    if type_calc in ['gains_capital', 'time_to_goal', 'installment', 'percentage']:
+        return main_invest_calc(type_calc=type_calc, **kwargs)
     elif type_calc == 'portfolio':
         return get_balance_portfolio(type_calc=type_calc, **kwargs)
-    elif type_calc == 'time_to_goal':
-        return calculate_horizon_custom(type_calc=type_calc, **kwargs)
-    elif type_calc == 'installment':
-        return get_month_payment(type_calc=type_calc, **kwargs)

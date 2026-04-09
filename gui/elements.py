@@ -86,19 +86,19 @@ def periodicity_combo(key):
 
 
 def invest_header_output(type_calc, **data):
-    print(f'invest_header_output({type_calc=})')
+    # print(f'invest_header_output({type_calc=})')
     param = {'font': 'Courier 20', 'pad': (5, 0)}
     layout = []
     if type_calc == 'time_to_goal':
         layout = [
             [
-                sg.Text('Что бы накопить ', **param),
+                sg.Text('Что бы накопить', **param),
                 sg.Text(div_to_ranks(str(data['capital'])), **param),
                 sg.T('\u20BD,', **param),
             ], [
-                sg.T('откладывая ', **param),
+                sg.T('откладывая', **param),
                 sg.T(data['period_payment'], **param),
-                sg.T('по ', **param),
+                sg.T('по', **param),
                 sg.Text(div_to_ranks(str(data['payment'])), **param),
                 sg.T('\u20BD', **param),
             ], [
@@ -115,7 +115,7 @@ def invest_header_output(type_calc, **data):
             ], [
                 sg.T('на протяжении', **param),
                 sg.T(f'{format_years_genitive(data["horizon"])},', **param),
-                sg.T('вы накопите:', **param)
+                sg.T('Вы накопите:', **param)
             ]
         ]
     elif type_calc == 'installment':
@@ -258,7 +258,7 @@ def invest_leader_output(type_calc, **data):
             ]]
     elif type_calc == 'installment':
         layout = [[
-                sg.Text(div_to_ranks(str(data["total_payment"])), **param),
+                sg.Text(div_to_ranks(str(data["payment"])), **param),
                 sg.T('\u20BD', **param),
             ]]
     return sg.Col(layout, expand_x=True, element_justification='c', pad=10)
@@ -271,7 +271,7 @@ def invest_liner_output(key, **kwargs):
         'capital': ('current_balance', 'Итоговый капитал:'),
         'contrib': ('deposit', 'Сумма пополнений:'),
         'received': ('income', 'Ожидаемый доход:'),
-        'paid': ('total_taxes', 'Плановые налоги:'),
+        'paid': ('total_taxes', 'Придется заплатить НДФЛ:'),
         'inf': ('inflation', 'Потери от инфляции:'),
 
     }
@@ -284,25 +284,17 @@ def invest_liner_output(key, **kwargs):
 
 
 def invest_inf_output(capital_inf, horizon, start_date, **kwargs):
-    param = {'font': 'Courier 14 bold', 'pad': (5, 0)}  # 'background_color': 'red'}
+    param = {'font': 'Courier 14', 'pad': (5, 0)}  # 'background_color': 'red'}
     left_col = sg.Col([[sg.Image(info_ico)]])
-    # right_col = sg.Col([
-    #     [
-    #         sg.Text(f'Покупательная способность капитала через {format_horizon(horizon)}', **param),
-    #     ], [
-    #         sg.Text(f'составит покупательной способности суммы {div_to_ranks(capital_inf)} \u20BD', **param),
-    #     ], [
-    #         sg.Text(f'с учетом нынешних цен по состоянию на {start_date:%d.%m.%Y} г.', **param),
-    #     ]])
     right_col = sg.Col([
         [
-            sg.Text(f'При годовой инфляции в размере 8% через {format_horizon(horizon)}', **param),
+            sg.Text(f'При средней инфляции в размере 8% через {format_horizon(horizon)}', **param),
         ], [
-            sg.Text(f'можно будет приобрести товаров и услуг столько же, сколько', **param),
+            sg.Text(f'на капитал можно будет приобрести столько же товаров и услуг,', **param),
         ], [
-            sg.Text(f'можно преобрести в настоящее время на сумму {div_to_ranks(capital_inf)} \u20BD', **param),
+            sg.Text(f'сколько и в настоящее время на сумму {div_to_ranks(capital_inf)} \u20BD', **param),
         ], [
-            sg.Text(f'с учетом цен по состоянию на {start_date:%d.%m.%Y} г.', **param),
+            sg.Text(f'в ценах по состоянию на {start_date:%d.%m.%Y} г.', **param),
         ]])
     return sg.Frame('', [[left_col, right_col]],
                     expand_x=True, element_justification='l', pad=10,

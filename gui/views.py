@@ -104,6 +104,7 @@ class MainView:
                 'gains_capital': ['payment', 'horizon', 'rate'],
                 'installment': ['capital', 'horizon', 'rate'],
                 'time_to_goal': ['payment', 'capital', 'rate'],
+                'percentage': ['payment', 'capital', 'horizon'],
             },
             '-BOND-': {},
             '-BALANCE-': {

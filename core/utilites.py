@@ -144,11 +144,13 @@ def reformat_raw_input_data(
         valid_data = {
             'period_payment': payment_step,
             'period_profit': profit_step,
-            'rate': float(rate.replace(',', '.')),
             'ratio': ratio,
             'tax_enabled': tax_enabled,
             'inf_enabled': inf_enabled,
         }
+
+        if rate:
+            valid_data['rate'] = float(rate.replace(',', '.'))
 
         if horizon:
             start_date = dd.now().date()
@@ -177,6 +179,8 @@ def reformat_raw_input_data(
     for key in field_money_input:
         value = round(float(raw_data[key].replace(' ', '').replace(',', '.')), 2) if raw_data[key] else 0
         # valid_data[key] = to_round_down(value) if key not in field_dont_round else value
+        if key == 'payment' and not value:
+            continue
         valid_data[key] = value
 
     valid_data['type_calc'] = type_calc

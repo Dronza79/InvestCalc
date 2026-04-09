@@ -24,6 +24,9 @@ class Period:
     def __str__(self):
         return self.__name
 
+    def __repr__(self):
+        return f'{type(self).__name__}={self.__value}'
+
     def __add__(self, other):
         # Позволяет делать: period + date
         if isinstance(other, date):
@@ -154,6 +157,9 @@ class Ratio:
 
     def __str__(self):
         return str(self.__step)
+
+    def __repr__(self):
+        return f'{type(self).__name__}={self.__step}'
 
     def up(self, number):
         return (number + self.__step - 1) // self.__step * self.__step

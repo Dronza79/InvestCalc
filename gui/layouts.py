@@ -57,11 +57,11 @@ def main_layout():
 
 
 def layout_right_note_invest(key, kwargs):
-    print(f'layout_right_note_invest({key=}, {kwargs=})')
+    # print(f'layout_right_note_invest({key=}, {kwargs=})')
     layout = [[invest_header_output(**kwargs)], [invest_leader_output(**kwargs)]]
     if kwargs.get('initial'):
         layout += [[invest_liner_output(key='start', **kwargs)]]
-    if kwargs['type_calc'] in ['time_to_goal']:#, 'installment']:
+    if kwargs['type_calc'] in ['time_to_goal']:
         layout += [[invest_liner_output(key='capital', **kwargs)]]
     layout += [
         [invest_liner_output(key='contrib', **kwargs)],
