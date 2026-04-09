@@ -61,7 +61,7 @@ def layout_right_note_invest(key, kwargs):
     layout = [[invest_header_output(**kwargs)], [invest_leader_output(**kwargs)]]
     if kwargs.get('initial'):
         layout += [[invest_liner_output(key='start', **kwargs)]]
-    if kwargs['type_calc'] in ['time_to_goal']:
+    if key in ['time_to_goal', 'installment', 'percentage'] and kwargs['capital'] != kwargs['current_balance']:
         layout += [[invest_liner_output(key='capital', **kwargs)]]
     layout += [
         [invest_liner_output(key='contrib', **kwargs)],

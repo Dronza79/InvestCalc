@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 
 from core.utilites import *
-from .models import Period, Ratio
+from core.models import Period, Ratio
 from .params import *
 
 
@@ -86,22 +86,18 @@ def periodicity_combo(key):
 
 
 def invest_header_output(type_calc, **data):
-    # print(f'invest_header_output({type_calc=})')
     param = {'font': 'Courier 20', 'pad': (5, 0)}
     layout = []
     if type_calc == 'time_to_goal':
         layout = [
             [
                 sg.Text('Что бы накопить', **param),
-                sg.Text(div_to_ranks(str(data['capital'])), **param),
-                sg.T('\u20BD,', **param),
-            ], [
+                sg.Text(f"{div_to_ranks(str(data['capital']))}\u20BD", **param),
                 sg.T('откладывая', **param),
+            ], [
                 sg.T(data['period_payment'], **param),
                 sg.T('по', **param),
-                sg.Text(div_to_ranks(str(data['payment'])), **param),
-                sg.T('\u20BD', **param),
-            ], [
+                sg.Text(f"{div_to_ranks(str(data['payment']))}\u20BD,", **param),
                 sg.Text('Вам потребуется:', **param),
             ]
         ]
@@ -109,8 +105,7 @@ def invest_header_output(type_calc, **data):
         layout = [
             [
                 sg.Text('Откладывая по', **param),
-                sg.Text(div_to_ranks(str(data['payment'])), **param),
-                sg.T('\u20BD', **param),
+                sg.Text(f"{div_to_ranks(str(data['payment']))}\u20BD", **param),
                 sg.T(data['period_payment'], **param)
             ], [
                 sg.T('на протяжении', **param),
@@ -121,17 +116,30 @@ def invest_header_output(type_calc, **data):
     elif type_calc == 'installment':
         layout = [
             [
-                sg.Text('Что бы накопить', **param),
-                sg.Text(div_to_ranks(str(data['capital'])), **param),
-                sg.T('\u20BD', **param),
-            ], [
-                sg.T('на протяжении', **param),
+                sg.Text('Для капитала', **param),
+                sg.Text(f"{div_to_ranks(str(data['capital']))}\u20BD", **param),
+                sg.T('за', **param),
                 sg.T(f'{format_years_genitive(data["horizon"])},', **param),
-                sg.T('Вам', **param),
             ], [
-                sg.T('необходимо откладывать', **param),
+                sg.T('необходимо пополнять', **param),
                 sg.T(data['period_payment'], **param),
-                sg.T('по:', **param),
+                sg.T('на:', **param),
+            ]
+        ]
+    elif type_calc == 'percentage':
+        layout = [
+            [
+                sg.Text('Для капитала', **param),
+                sg.Text(f"{div_to_ranks(str(data['capital']))}\u20BD", **param),
+                sg.T('за', **param),
+                sg.T(f'{format_years_genitive(data["horizon"])},', **param),
+            ], [
+                sg.T('пополняя', **param),
+                sg.T(data['period_payment'], **param),
+                sg.T(f"на {div_to_ranks(str(data['payment']))}\u20BD", **param),
+                sg.T('необходимо', **param),
+            ], [
+                sg.T('иметь годовую ставку не менее:', **param),
             ]
         ]
     return sg.Col(layout, expand_x=True, element_justification='c', pad=20)
@@ -261,6 +269,11 @@ def invest_leader_output(type_calc, **data):
                 sg.Text(div_to_ranks(str(data["payment"])), **param),
                 sg.T('\u20BD', **param),
             ]]
+    elif type_calc == 'percentage':
+        layout = [[
+                sg.Text(clear_field_percent(str(data["rate"])), **param),
+                sg.T('%', **param),
+            ]]
     return sg.Col(layout, expand_x=True, element_justification='c', pad=10)
 
 
@@ -268,10 +281,10 @@ def invest_liner_output(key, **kwargs):
     param = {'font': 'Courier 18', 'pad': (5, 0)}  # 'background_color': 'red'}
     ADD = {
         'start': ('initial', 'Начальная сумма:'),
-        'capital': ('current_balance', 'Итоговый капитал:'),
+        'capital': ('current_balance', 'Фактический капитал:'),
         'contrib': ('deposit', 'Сумма пополнений:'),
         'received': ('income', 'Ожидаемый доход:'),
-        'paid': ('total_taxes', 'Придется заплатить НДФЛ:'),
+        'paid': ('total_taxes', 'Начислено к оплате НДФЛ:'),
         'inf': ('inflation', 'Потери от инфляции:'),
 
     }
@@ -290,7 +303,7 @@ def invest_inf_output(capital_inf, horizon, start_date, **kwargs):
         [
             sg.Text(f'При средней инфляции в размере 8% через {format_horizon(horizon)}', **param),
         ], [
-            sg.Text(f'на капитал можно будет приобрести столько же товаров и услуг,', **param),
+            sg.Text(f'на капитал можно будет приобрести столько же,', **param),
         ], [
             sg.Text(f'сколько и в настоящее время на сумму {div_to_ranks(capital_inf)} \u20BD', **param),
         ], [
@@ -298,10 +311,5 @@ def invest_inf_output(capital_inf, horizon, start_date, **kwargs):
         ]])
     return sg.Frame('', [[left_col, right_col]],
                     expand_x=True, element_justification='l', pad=10,
-                    # relief=sg.RELIEF_RAISED   # выдавлено
-                    # relief=sg.RELIEF_SUNKEN   # вдавлено
-                    # relief=sg.RELIEF_FLAT     # чисто
-                    # relief=sg.RELIEF_RIDGE    # выгнутый бортик
-                    # relief=sg.RELIEF_GROOVE   # вогнутый бортик
                     relief=sg.RELIEF_SOLID  # тольстая рамка
                     )

@@ -3,7 +3,7 @@ from datetime import datetime as dd
 
 from dateutil.relativedelta import relativedelta
 
-from gui.models import Period
+from core.models import Period
 
 
 def clear_field_digits(string):
@@ -18,14 +18,6 @@ def clear_field_digits(string):
             decimal_part = decimal_part[:1] + decimal_part[-1]
         string = f"{int_part},{decimal_part}"
     return string
-
-
-def to_round_up(digit):
-    return (digit + 99) // 100 * 100
-
-
-def to_round_down(digit):
-    return digit // 100 * 100
 
 
 def div_to_ranks(string):
@@ -134,10 +126,6 @@ def reformat_raw_input_data(
 ):
     valid_data = {}
     field_money_input = []
-    field_dont_round = [
-        'percent_stocks', 'percent_bonds', 'percent_funds',
-        'percent_metals', 'capital', 'payment', 'initial'
-    ]
 
     if ltab == '-INVEST-':
         field_money_input = ['capital', 'payment', 'initial']
@@ -177,8 +165,11 @@ def reformat_raw_input_data(
         valid_data['pay_enabled'] = pay_enabled
 
     for key in field_money_input:
-        value = round(float(raw_data[key].replace(' ', '').replace(',', '.')), 2) if raw_data[key] else 0
-        # valid_data[key] = to_round_down(value) if key not in field_dont_round else value
+        value = (
+            int(raw_data[key].replace(' ', '')) if raw_data[key].replace(' ', '').isdigit()
+            else round(float(raw_data[key].replace(' ', '').replace(',', '.')), 2) if raw_data[key]
+            else 0
+        )
         if key == 'payment' and not value:
             continue
         valid_data[key] = value

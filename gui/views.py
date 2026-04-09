@@ -1,5 +1,5 @@
 from core.handlers import calculations
-from .models import update_chart
+from .plots import update_chart
 from .windows import *
 
 
@@ -28,10 +28,10 @@ class MainView:
                         'Не заполнены следующие поля:'], check_data)
                     continue
                 valid_data = reformat_raw_input_data(**self.value)
-                print(f'{self.value=}')
-                print(f'{valid_data=}')
+                # print(f'{self.value=}')
+                # print(f'{valid_data=}')
                 result = calculations(**valid_data)
-                print(f'{result=}')
+                # print(f'{result=}')
 
                 outres = self.window['-BODYNOTE-']
                 if outres.metadata:

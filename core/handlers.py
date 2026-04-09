@@ -1,20 +1,18 @@
 from dateutil.relativedelta import relativedelta
 
 from core.config import *
-from gui.models import Period
+from core.models import Period
 
 
-def calculate_tax(profit_raw: float, year_profit: float) -> float:
+def calculate_tax(year_profit):
     """Расчет прогрессивного налога."""
-    if year_profit >= TAX_THRESHOLD:
-        return profit_raw * TAX_HIGH
+    if year_profit <= TAX_THRESHOLD:
+        return year_profit * TAX_LOW
 
-    if year_profit + profit_raw > TAX_THRESHOLD:
-        low_part = TAX_THRESHOLD - year_profit
-        high_part = profit_raw - low_part
+    if year_profit > TAX_THRESHOLD:
+        low_part = TAX_THRESHOLD
+        high_part = year_profit - low_part
         return (low_part * TAX_LOW) + (high_part * TAX_HIGH)
-
-    return profit_raw * TAX_LOW
 
 
 def calculate_gains(start_date, end_date, initial, payment, rate, period_payment,
@@ -23,135 +21,128 @@ def calculate_gains(start_date, end_date, initial, payment, rate, period_payment
     Основной движок с логикой капитализации и налогов.
     """
     result = {}
-    current_balance = float(initial)
-    total_deposit = float(initial)
-    total_income = 0.0
-    total_taxes = 0.0
-
+    current_balance = initial
+    total_deposit = current_balance
+    total_income = 0
+    total_taxes = 0
     year_profit = 0.0
-    current_year = start_date.year
+    accumulated_profit = 0.0
 
     # Указатели на даты следующих событий
-    next_payment_date = start_date + period_payment
+    next_payment_date = start_date
     next_profit_date = start_date + period_profit
     curr_date = start_date
 
-    # Эффективная ставка за один период начисления
-    # Используем метод класса Period для определения частоты в году
-    rate_per_period = (rate / 100) / period_profit.times_per_year()
-
-    while curr_date < end_date:
-        curr_date = min(next_payment_date, next_profit_date, end_date)
-
-        if curr_date > end_date:
-            break
+    while curr_date <= end_date:
 
         # 1. Начисление процентов (Капитализация)
+        daily_rate = (rate / 100) / (curr_date + relativedelta(years=1) - curr_date).days
+        day_profit = current_balance * daily_rate
+        accumulated_profit += day_profit
+
         if curr_date == next_profit_date:
-            profit_raw = current_balance * rate_per_period
-
-            if tax_enabled:
-                if curr_date.year != current_year:
-                    year_profit = 0.0
-                    current_year = curr_date.year
-
-                tax = calculate_tax(profit_raw, year_profit)
-                profit_after_tax = profit_raw - tax
-                total_taxes += tax
-                year_profit += profit_raw
-            else:
-                profit_after_tax = profit_raw
-
-            # КАПИТАЛИЗАЦИЯ: прибавляем доход к телу баланса
-            current_balance += profit_after_tax
-            total_income += profit_after_tax
+            current_balance += accumulated_profit
+            total_income += accumulated_profit
+            year_profit += accumulated_profit
             next_profit_date += period_profit
+            accumulated_profit = 0.0
 
         # 2. Пополнение счета
-        if curr_date == next_payment_date:
+        if curr_date == next_payment_date and curr_date < end_date:
             current_balance += payment
             total_deposit += payment
             next_payment_date += period_payment
 
-    # 3. Учет инфляции (дисконтирование итогового капитала)
+        # 3. Начисление налогов
+        is_tax_day = (curr_date.month == 12 and curr_date.day == 31)
+        if tax_enabled and is_tax_day:
+            tax = calculate_tax(year_profit)
+            year_profit = 0.0
+            # current_balance -= tax
+            total_taxes += tax
+
+        curr_date += relativedelta(days=1)
+
+    if tax_enabled:
+        result["total_taxes"] = ratio.up(total_taxes)
+
+    # 4. Учет инфляции (дисконтирование итогового капитала)
     if inf_enabled:
         years = (end_date - start_date).days / 365.25
         capital_inf = current_balance / ((1 + INF_RATE) ** years)
-        result['capital_inf'] = capital_inf
-        result['inflation'] = current_balance - capital_inf
+        result['capital_inf'] = ratio.up(int(capital_inf))
+        result['inflation'] = ratio.up(int(current_balance - capital_inf))
 
     result.update({
-        "current_balance": ratio.down(current_balance),
-        "deposit": ratio.down(total_deposit),
-        "income": ratio.down(total_income),
-        "total_taxes": ratio.up(total_taxes),
-
+        "current_balance": ratio.down(int(current_balance)),
+        "deposit": ratio.down(int(total_deposit)),
+        "income": ratio.down(int(total_income)),
     })
 
     return {**result, **kwargs}
 
 
+def binary_find_param(low, high, sim_func, capital, **kwargs):
+    for _ in range(25):
+        mid = (low + high) / 2
+        sim = sim_func(mid)
+        if sim['current_balance'] < capital:
+            low = mid
+        else:
+            high = mid
+
+    return high
+
+
+def calc_installment(**kwargs):
+    ratio = kwargs.get('ratio')
+    payment = binary_find_param(
+        0, 10_000_000,
+        lambda p: calculate_gains(payment=p, **kwargs),
+        **kwargs
+    )
+    refined_payment = ratio.up(int(payment))
+    res = calculate_gains(payment=refined_payment, **kwargs)
+    return {**res, 'payment': refined_payment}
+
+
+def calc_time_to_goal(**kwargs):
+    start_date = kwargs.get('start_date')
+    days = binary_find_param(
+        0, 50 * 365,
+        lambda d: calculate_gains(end_date=start_date + relativedelta(days=d), **kwargs),
+        **kwargs
+    )
+
+    end_date = start_date + relativedelta(days=days)
+    res = calculate_gains(end_date=end_date, **kwargs)
+
+    return {
+        **res,
+        'end_date': end_date,
+        'horizon': Period('horizon', relativedelta(end_date, start_date))
+    }
+
+
+def calc_percentage(**kwargs):
+    rate = binary_find_param(0.0, 500.0, lambda r: calculate_gains(rate=r, **kwargs), **kwargs)
+    rounded_rate = round(rate, 2)
+    res = calculate_gains(rate=rounded_rate, **kwargs)
+    return {**res, 'rate': rounded_rate}
+
+
 def main_invest_calc(type_calc, **kwargs):
     print(f'main_invest_calc({type_calc=}, {kwargs=})')
 
-    capital = kwargs.get('capital')
-    start_date = kwargs.get('start_date')
-    ratio = kwargs.get('ratio')
+    # Стратегии расчета
+    strategies = {
+        'gains_capital': lambda: calculate_gains(**kwargs),
+        'installment': lambda: calc_installment(**kwargs),
+        'time_to_goal': lambda: calc_time_to_goal(**kwargs),
+        'percentage': lambda: calc_percentage(**kwargs)
+    }
 
-    res = {}
-
-    if type_calc == 'gains_capital':
-        res = calculate_gains(**kwargs)
-
-    elif type_calc == 'installment':
-        low, high = 0, 10_000_000
-
-        for _ in range(25):
-            mid = (low + high) / 2
-            sim = calculate_gains(payment=mid, **kwargs)
-
-            if sim['current_balance'] < capital:
-                low = mid
-            else:
-                high = mid
-
-        res = calculate_gains(payment=ratio.up(high), **kwargs)
-        res['payment'] = ratio.up(high)
-
-    elif type_calc == 'time_to_goal':
-        low, high = 0, 50 * 365
-
-        for _ in range(25):
-            mid = (low + high) // 2
-            temp_end = start_date + relativedelta(days=mid)
-            sim = calculate_gains(end_date=temp_end, **kwargs)
-
-            if sim['current_balance'] < capital:
-                low = mid
-            else:
-                high = mid
-
-        end_date = start_date + relativedelta(days=high)
-        res = calculate_gains(end_date=end_date, **kwargs)
-
-        res['horizon'] = Period('horizon', relativedelta(end_date, start_date))
-        res['end_date'] = end_date
-
-    elif type_calc == 'percentage':
-        low, high = 0.0, 500.0
-
-        for _ in range(25):
-            mid = (low + high) / 2
-            sim = calculate_gains(rate=mid, **kwargs)
-
-            if sim['current_balance'] < capital:
-                low = mid
-            else:
-                high = mid
-
-        res = calculate_gains(rate=round(high, 2), **kwargs)
-        print(f'rate={high} {res=}')
-        res['rate'] = round(high, 2)
+    res = strategies[type_calc]()
 
     return {
         'type_calc': type_calc,
