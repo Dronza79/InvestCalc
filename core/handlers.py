@@ -27,6 +27,11 @@ def calculate_gains(start_date, end_date, initial, payment, rate, period_payment
     total_taxes = 0
     year_profit = 0.0
     accumulated_profit = 0.0
+    profit_12_month = 0
+    graph_data = [[0], [initial + payment], [0]]
+    table_data = []
+    calendar_year_date = start_date + relativedelta(years=1)
+    count = 0
 
     # Указатели на даты следующих событий
     next_payment_date = start_date
@@ -39,6 +44,7 @@ def calculate_gains(start_date, end_date, initial, payment, rate, period_payment
         daily_rate = (rate / 100) / (curr_date + relativedelta(years=1) - curr_date).days
         day_profit = current_balance * daily_rate
         accumulated_profit += day_profit
+        profit_12_month += day_profit
 
         if curr_date == next_profit_date:
             current_balance += accumulated_profit
@@ -54,12 +60,27 @@ def calculate_gains(start_date, end_date, initial, payment, rate, period_payment
             next_payment_date += period_payment
 
         # 3. Начисление налогов
-        is_tax_day = (curr_date.month == 12 and curr_date.day == 31)
-        if tax_enabled and is_tax_day:
+        is_tax_day = (curr_date.month == 12 and curr_date.day == 31 or curr_date == end_date)
+        if is_tax_day and tax_enabled:
             tax = calculate_tax(year_profit)
             year_profit = 0.0
             # current_balance -= tax
             total_taxes += tax
+
+        # 4. Наполнение данных
+        graph_day = (curr_date == calendar_year_date or curr_date == end_date)
+        if graph_day:
+            count += 1
+            graph_data[0].append(count)
+            graph_data[1].append(round(current_balance - year_profit))
+            graph_data[2].append(round(year_profit))
+            calendar_year_date += relativedelta(years=1)
+
+            start_balance = current_balance - payment * 12 - profit_12_month
+            table_data += [
+                [count, round(start_balance), round(payment * 12), round(profit_12_month), round(current_balance)]
+            ]
+            profit_12_month = 0
 
         curr_date += relativedelta(days=1)
 
@@ -77,6 +98,8 @@ def calculate_gains(start_date, end_date, initial, payment, rate, period_payment
         "current_balance": ratio.down(int(current_balance)),
         "deposit": ratio.down(int(total_deposit)),
         "income": ratio.down(int(total_income)),
+        'graph_data': graph_data,
+        'table_data': table_data,
     })
 
     return {**result, **kwargs}
