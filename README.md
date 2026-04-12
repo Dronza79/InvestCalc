@@ -26,5 +26,5 @@ python setup.py install
 # Создание самозапускаемого файла с помощью pyinstaller
 1. Инсталировани
 ```bash
-pyinstaller -F --windowed -i favicon.ico -n calc main.py
+pyinstaller -F --windowed -i favicon.ico -n investcalc main.py
 ```

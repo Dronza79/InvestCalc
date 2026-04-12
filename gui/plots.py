@@ -1,8 +1,8 @@
-import importlib
-
 from matplotlib import ticker
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
+
+from core.utilites import format_digit_for_graph
 
 
 # --- Функции для работы с графиком ---
@@ -14,7 +14,6 @@ def draw_figure(canvas, figure):
 
 
 def create_inscriptions_value(canvas_elem, data_list):
-    format_digit = importlib.import_module("core.utilites").format_digit_for_graph
     for i, layer_values in enumerate(data_list[0][1:], start=1):
         max_val = data_list[1][i] + data_list[2][i]
 
@@ -22,8 +21,8 @@ def create_inscriptions_value(canvas_elem, data_list):
         text_y = max_val + 10000 if i + 1 else max_val
         last_x = layer_values
 
-        label_text = format_digit(max_val)
-        label_text1 = format_digit(data_list[1][i])
+        label_text = format_digit_for_graph(max_val)
+        label_text1 = format_digit_for_graph(data_list[1][i])
 
         canvas_elem.text(last_x, text_y, label_text,
                          va='top', ha='right', fontsize=9, color='black')
