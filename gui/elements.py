@@ -196,7 +196,8 @@ def general_info(balance_capital, extra_needed, internal_cash, partial_repl, **k
         ]]
     layout += [[sg.Text('Целевой баланс:', p=((0, 0), (10, 0)), **title_param, **font_param)], [sg.HSeparator()]]
     layout += [
-        [sg.Text(f"- {relay[key]}:\t{kwargs[key]:<5}%", p=0, **font_param)] for key in relay if kwargs[key]
+        [sg.Text(f"- {relay[key]}:\t{float(kwargs[key]):<5}%", p=0, **font_param)]
+        for key in relay if kwargs[key]
     ]
 
     return sg.Col(layout)
@@ -236,7 +237,7 @@ def total_result_balance(target_total, **data):
         'total_bonds': 'Облигации',
         'total_funds': 'Фонды',
         'total_metals': 'Драгметалы',
-        'total_internal_cash': 'Свободные средства'
+        'internal_cash': 'Свободные средства'
     }
     layout = [
         [sg.Text('Итоговое состояние портфеля:', p=((0, 0), (10, 0)), **title_param, **font_param)],
@@ -261,19 +262,19 @@ def invest_leader_output(type_calc, **data):
         layout = [[sg.T(f'{format_horizon(data["horizon"])}', **param)]]
     elif type_calc == 'gains_capital':
         layout = [[
-                sg.Text(div_to_ranks(str(data["current_balance"])), **param),
-                sg.T('\u20BD', **param),
-            ]]
+            sg.Text(div_to_ranks(str(data["current_balance"])), **param),
+            sg.T('\u20BD', **param),
+        ]]
     elif type_calc == 'installment':
         layout = [[
-                sg.Text(div_to_ranks(str(data["payment"])), **param),
-                sg.T('\u20BD', **param),
-            ]]
+            sg.Text(div_to_ranks(str(data["payment"])), **param),
+            sg.T('\u20BD', **param),
+        ]]
     elif type_calc == 'percentage':
         layout = [[
-                sg.Text(clear_field_percent(str(data["rate"])), **param),
-                sg.T('%', **param),
-            ]]
+            sg.Text(clear_field_percent(str(data["rate"])), **param),
+            sg.T('%', **param),
+        ]]
     return sg.Col(layout, expand_x=True, element_justification='c', pad=10)
 
 

@@ -14,7 +14,7 @@ class MainView:
     def run(self):
         while not self.stop:
             self.event, self.value = self.window.read()
-            # print(f'MainView {self.event=} {self.value=}')
+            print(f'MainView {self.event=} {self.value=}')
 
             self.formatting_input_data()
             self.close_window()
@@ -50,7 +50,7 @@ class MainView:
                 if self.value['ltab'] == '-INVEST-':
                     update_chart(self.window['-CANVAS-'], result['graph_data'])
 
-            elif self.event in ['-CLR-',]: # 'Delete:46']:
+            elif self.event in ['-CLR-']: # 'Delete:46']:
                 [self.window[val].update('') for val in key_input_format]
 
     def init_build_graph(self):
@@ -109,7 +109,7 @@ class MainView:
             '-BOND-': {},
             '-BALANCE-': {
                 'portfolio': [
-                    ('balance_capital', 'balance_capital'),
+                    # ('balance_capital', 'balance_capital'),
                     ('stocks', 'percent_stocks'),
                     ('bonds', 'percent_bonds'),
                     ('funds', 'percent_funds'),
@@ -119,6 +119,7 @@ class MainView:
         }
         tab = self.value['ltab']
         for name, group in type_calc[tab].items():
+            print(f'{name=} {group=}')
             if tab == '-INVEST-' and all(self.value[x] for x in group):
                 self.value['type_calc'] = name
                 return
@@ -145,10 +146,10 @@ class MainView:
         if self.event not in lst_money + lst_percent:
             return
 
-        if not self.value['balance_capital']:
-            self.window['balance_capital'].update(background_color='Salmon')
-            popup_errors_notification(self, ['ОШИБКА!!!'], ["Необходимо заполнить капитал!!!"])
-            return
+        # if not self.value['balance_capital']:
+        #     self.window['balance_capital'].update(background_color='Salmon')
+        #     popup_errors_notification(self, ['ОШИБКА!!!'], ["Необходимо заполнить капитал!!!"])
+        #     return
 
         def func(string: str):
             res = (clear_field_digits(string).replace(' ', '').replace(',', '.'))
@@ -166,7 +167,10 @@ class MainView:
         tracked_val = func(self.value[self.event])
 
         if current_sum + tracked_val >= limit:
-            value = limit - current_sum
-            self.window[self.event].update(format_func(round(value,  2)))
-            return
-
+            if self.event in lst_percent:
+                value = limit - current_sum
+                self.window[self.event].update(format_func(round(value,  2)))
+                return
+            else:
+                value = current_sum + tracked_val
+                self.window['balance_capital'].update(format_func(round(value,  2)))
