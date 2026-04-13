@@ -27,6 +27,10 @@ def layout_right_graph():
     return [[sg.Canvas(key='-CANVAS-')]]
 
 
+def layout_right_table():
+    return [[sg.Table([], key='-DATA-TABLE-', **table)]]
+
+
 def left_part():
     return sg.Col([[
         sg.TabGroup([[
@@ -44,7 +48,7 @@ def right_part():
         sg.TabGroup([[
             sg.Tab('Пояснения', layout_right_note(), key='-NOTE-'),
             sg.Tab('График', layout_right_graph(), k='-GRAPH-'),
-            sg.Tab('Таблица', [[]], k='-TABLE-'),
+            sg.Tab('Таблица', layout_right_table(), k='-TABLE-'),
         ]], k='rtab', **rht_tabgroup)]
     ], **rht_col)
 

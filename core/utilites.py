@@ -189,11 +189,14 @@ def check_for_day_week(date_value):
     # )
 
 
-def format_digit_for_graph(digit):
+def format_digit_for_graph(digit, p=None):
     return (
-        f"{int(digit / 1e6)}кк" if digit == 1e6
-        else f"{digit / 1e6:.1f}кк" if digit > 1e6
-        else f"{int(digit / 1e3)}к"
+        f"{int(digit / 1e6)}кк" if digit and digit % 1e6 == 0
+        else f"{f'{digit / 1e6:.1f}'.replace('.', ',')}кк" if digit > 1e6 and digit % 1e5 == 0
+        else f"{f'{digit / 1e6:.2f}'.replace('.', ',')}кк" if digit > 1e6 and digit % 1e4 == 0
+        else f"{f'{digit / 1e6:.3f}'.replace('.', ',')}кк" if digit > 1e6
+        else f"{int(digit / 1e3)}к" if digit != 0
+        else f"0"
     )
 
 
@@ -203,7 +206,7 @@ def get_color(val):
 
 def get_text(val):
     return (
-        f'ДОКУПИТЬ на {div_to_ranks(abs(val))} \u20BD' if val > 0 else
-        f'ПРОДАТЬ на {div_to_ranks(abs(val))} \u20BD' if val < 0 else
+        f'КУПИТЬ на {div_to_ranks(abs(val))}\u20BD' if val > 0 else
+        f'ПРОДАТЬ на {div_to_ranks(abs(val))}\u20BD' if val < 0 else
         "ДЕРЖАТЬ"
     )

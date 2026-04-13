@@ -2,17 +2,18 @@ from dateutil.relativedelta import relativedelta
 
 from core.config import *
 from core.models import Period
+from core.utilites import div_to_ranks
 
 
 def calculate_tax(year_profit):
     """Расчет прогрессивного налога."""
     if year_profit <= TAX_THRESHOLD:
-        return year_profit * TAX_LOW
+        return round(year_profit * TAX_LOW)
 
     if year_profit > TAX_THRESHOLD:
         low_part = TAX_THRESHOLD
         high_part = year_profit - low_part
-        return (low_part * TAX_LOW) + (high_part * TAX_HIGH)
+        return round((low_part * TAX_LOW) + (high_part * TAX_HIGH))
 
 
 def calculate_gains(start_date, end_date, initial, payment, rate, period_payment,
@@ -26,6 +27,7 @@ def calculate_gains(start_date, end_date, initial, payment, rate, period_payment
     total_income = 0
     total_taxes = 0
     year_profit = 0.0
+    tax = 0
     accumulated_profit = 0.0
     profit_12_month = 0
     graph_data = [[0], [initial + payment], [0]]
@@ -72,13 +74,22 @@ def calculate_gains(start_date, end_date, initial, payment, rate, period_payment
         if graph_day:
             count += 1
             graph_data[0].append(count)
-            graph_data[1].append(round(current_balance - year_profit))
-            graph_data[2].append(round(year_profit))
+            graph_data[1].append(round(total_deposit))
+            # graph_data[1].append(round(current_balance - profit_12_month))
+            # graph_data[2].append(round(profit_12_month))
+            graph_data[2].append(round(current_balance - total_deposit))
             calendar_year_date += relativedelta(years=1)
 
             start_balance = current_balance - payment * 12 - profit_12_month
             table_data += [
-                [count, round(start_balance), round(payment * 12), round(profit_12_month), round(current_balance)]
+                [
+                    count,
+                    f'{div_to_ranks(round(start_balance))}\u20BD',
+                    f'{div_to_ranks(round(payment * 12))}\u20BD',
+                    f'{div_to_ranks(round(profit_12_month))}\u20BD',
+                    f'{div_to_ranks(calculate_tax(profit_12_month))}\u20BD' if tax_enabled else '--',
+                    f'{div_to_ranks(round(current_balance))}\u20BD'
+                ]
             ]
             profit_12_month = 0
 
@@ -155,7 +166,7 @@ def calc_percentage(**kwargs):
 
 
 def main_invest_calc(type_calc, **kwargs):
-    print(f'main_invest_calc({type_calc=}, {kwargs=})')
+    # print(f'main_invest_calc({type_calc=}, {kwargs=})')
 
     # Стратегии расчета
     strategies = {
@@ -176,8 +187,6 @@ def main_invest_calc(type_calc, **kwargs):
 
 def get_balance_portfolio(balance_capital, stocks, bonds, funds, metals, percent_stocks, percent_bonds,
                           percent_funds, percent_metals, partial_repl, pay_enabled, **kwargs):
-    invested_sum = stocks + bonds + funds + metals
-    internal_cash = balance_capital - invested_sum
 
     assets = {
         "stocks": {"curr": stocks, "target_p": percent_stocks},
@@ -211,6 +220,8 @@ def get_balance_portfolio(balance_capital, stocks, bonds, funds, metals, percent
         actions[f"action_{key}"] = diff if abs(diff) >= 100 else 0.0
         totals[f'total_{key}'] = round(target_val, 2)
 
+    internal_cash = target_total_capital - sum(totals.values())
+
     return {
         "balance_capital": balance_capital,
         'percent_stocks': percent_stocks,
@@ -220,13 +231,13 @@ def get_balance_portfolio(balance_capital, stocks, bonds, funds, metals, percent
         "partial_repl": partial_repl,
         "extra_needed": round(extra_needed, 2),
         "target_total": round(target_total_capital, 2),
-        'internal_cash': internal_cash,
+        'internal_cash': round(internal_cash, 2),
         **actions, **totals, **kwargs
     }
 
 
 def calculations(type_calc, **kwargs):
-    if type_calc in ['gains_capital', 'time_to_goal', 'installment', 'percentage']:
-        return main_invest_calc(type_calc=type_calc, **kwargs)
-    elif type_calc == 'portfolio':
+    # if type_calc in ['gains_capital', 'time_to_goal', 'installment', 'percentage']:
+    if type_calc == 'portfolio':
         return get_balance_portfolio(type_calc=type_calc, **kwargs)
+    return main_invest_calc(type_calc=type_calc, **kwargs)

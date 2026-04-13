@@ -49,6 +49,7 @@ class MainView:
 
                 if self.value['ltab'] == '-INVEST-':
                     update_chart(self.window['-CANVAS-'], result['graph_data'])
+                    self.window['-DATA-TABLE-'].update(result['table_data'])
 
             elif self.event in ['-CLR-']: # 'Delete:46']:
                 [self.window[val].update('') for val in key_input_format]
@@ -87,7 +88,6 @@ class MainView:
         }
 
         first_visible_tab = None
-
         for tab in self.window['rtab'].Rows[0]:
             is_visible = tab.Key in visibility_map.get(self.value['ltab'], [])
             tab.update(visible=is_visible)
@@ -119,7 +119,7 @@ class MainView:
         }
         tab = self.value['ltab']
         for name, group in type_calc[tab].items():
-            print(f'{name=} {group=}')
+            # print(f'{name=} {group=}')
             if tab == '-INVEST-' and all(self.value[x] for x in group):
                 self.value['type_calc'] = name
                 return
@@ -140,6 +140,10 @@ class MainView:
         return [error[1] for error in errors]
 
     def data_adjustment_in_parts(self):
+        """
+        Проверка данных в группах полей и их автозаполнение
+        :return:
+        """
         lst_money = ['stocks', 'bonds', 'funds', 'metals']
         lst_percent = ['percent_stocks', 'percent_bonds', 'percent_funds', 'percent_metals']
 
@@ -170,6 +174,9 @@ class MainView:
             if self.event in lst_percent:
                 value = limit - current_sum
                 self.window[self.event].update(format_func(round(value,  2)))
+                for key in lst_percent:
+                    if key != self.event:
+                        self.window[key].update(format_func(func(self.value[key])))
                 return
             else:
                 value = current_sum + tracked_val

@@ -1,5 +1,3 @@
-import PySimpleGUI as sg
-
 from core.utilites import *
 from core.models import Period, Ratio
 from .params import *

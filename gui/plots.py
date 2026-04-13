@@ -51,11 +51,7 @@ def update_chart(canvas_elem, data_list):
 
     # Для делений на осях (чисел)
     ax.tick_params(axis='both', labelsize=9, labelcolor='grey')
-    formatter = ticker.FuncFormatter(
-        lambda x, p: f"{int(x / 1e6)}кк" if x == 1e6
-        else f"{x / 1e6:.1f}кк" if x > 1e6
-        else f"{int(x / 1e3)}к"
-    )
+    formatter = ticker.FuncFormatter(format_digit_for_graph)
     ax.yaxis.set_major_formatter(formatter)
 
     # Построение самого графика
