@@ -13,9 +13,9 @@ def layout_left_invest():
 
 def layout_left_balance():
     return (
-        [[capital_input('balance_')]] +
-        [[exchange_instrument_input(k)] for k in ['stocks', 'bonds', 'funds', 'metals']] +
-        [[payment_param()]]
+            [[capital_input('balance_')]] +
+            [[exchange_instrument_input(k)] for k in ['stocks', 'bonds', 'funds', 'metals']] +
+            [[payment_param()]]
     )
 
 
@@ -24,7 +24,14 @@ def layout_right_note():
 
 
 def layout_right_graph():
-    return [[sg.Canvas(key='-CANVAS-')]]
+    # return [[sg.Canvas(key='-CANVAS-')]]
+    return [[
+        sg.Graph(
+            canvas_size=(800, 700), graph_bottom_left=(0, 0), graph_top_right=(1, 1),
+            key='-G-', background_color='white',
+            enable_events=True, drag_submits=True, motion_events=True
+        )
+    ]]
 
 
 def layout_right_table():

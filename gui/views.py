@@ -1,5 +1,5 @@
 from core.handlers import calculations
-from .plots import update_chart
+from .plots import *
 from .windows import *
 
 
@@ -8,18 +8,21 @@ class MainView:
         sg.theme('SystemDefault1')
         self.event = self.value = self.stop = None
         self.window = main_window()
-        self.init_build_graph()
+        self.graph_key = '-G-'
+        self.chart = InvestmentChart(self, self.graph_key)
+        # self.init_build_graph()
         self.run()
 
     def run(self):
         while not self.stop:
             self.event, self.value = self.window.read()
-            print(f'MainView {self.event=} {self.value=}')
+            # print(f'MainView {self.event=} {self.value=}')
 
             self.formatting_input_data()
             self.close_window()
             self.managing_tab_visibility()
             self.data_adjustment_in_parts()
+            self.update_cursor_graph()
 
             if self.event in ['-GO-', '\r']:
                 if check_data := self.check_fullness_raw_data():
@@ -48,16 +51,21 @@ class MainView:
                         [[layout_extend(f'OUTRES-{outres.metadata}', result)]])
 
                 if self.value['ltab'] == '-INVEST-':
-                    update_chart(self.window['-CANVAS-'], result['graph_data'])
+                    # update_chart(self.window['-CANVAS-'], result['graph_data'])
+                    self.chart.draw(result['graph_data'])
                     self.window['-DATA-TABLE-'].update(result['table_data'])
 
             elif self.event in ['-CLR-']: # 'Delete:46']:
                 [self.window[val].update('') for val in key_input_format]
 
     def init_build_graph(self):
-        update_chart(self.window['-CANVAS-'], [[0], [0], [0]])
+        # update_chart(self.window['-CANVAS-'], [[0], [0], [0]])
         self.window.refresh()
         self.window.move_to_center()
+
+    def update_cursor_graph(self):
+        if self.graph_key in self.event:
+            self.chart.update_cursor(self.value[self.graph_key])
 
     def formatting_input_data(self):
         if self.event in key_input_format:

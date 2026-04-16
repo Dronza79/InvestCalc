@@ -189,15 +189,32 @@ def check_for_day_week(date_value):
     # )
 
 
-def format_digit_for_graph(digit, p=None):
-    return (
-        f"{int(digit / 1e6)}кк" if digit and digit % 1e6 == 0
-        else f"{f'{digit / 1e6:.1f}'.replace('.', ',')}кк" if digit > 1e6 and digit % 1e5 == 0
-        else f"{f'{digit / 1e6:.2f}'.replace('.', ',')}кк" if digit > 1e6 and digit % 1e4 == 0
-        else f"{f'{digit / 1e6:.3f}'.replace('.', ',')}кк" if digit > 1e6
-        else f"{int(digit / 1e3)}к" if digit != 0
-        else f"0"
-    )
+def format_digit_for_graph(digit):
+    try:
+        digit = float(digit)
+    except (ValueError, TypeError):
+        return '0'
+
+    if digit <= 0:
+        return '0'
+
+        # МИЛЛИАРДЫ: до 1 знака (1.1М)
+    if digit >= 1e9:
+        val = f"{digit / 1e9:.1f}".rstrip('0').rstrip('.')
+        return f"{val}М".replace('.', ',')
+
+        # МИЛЛИОНЫ: до 2 знаков (1,1кк или 1,12кк)
+    if digit >= 1e6:
+        # :.2f сделает 1.101 -> "1.10", а rstrip('0') уберет ноль -> "1.1"
+        val = f"{digit / 1e6:.2f}".rstrip('0').rstrip('.')
+        return f"{val}кк".replace('.', ',')
+
+        # ТЫСЯЧИ: целые (12к)
+    if digit >= 1e3:
+        return f"{int(digit / 1e3)}к"
+
+        # ОСТАЛЬНОЕ: целые (999)
+    return str(int(digit))
 
 
 def get_color(val):
