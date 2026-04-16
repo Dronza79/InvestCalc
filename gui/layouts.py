@@ -28,7 +28,7 @@ def layout_right_graph():
     return [[
         sg.Graph(
             canvas_size=(800, 700), graph_bottom_left=(0, 0), graph_top_right=(1, 1),
-            key='-G-', background_color='white',
+            key='-G-', background_color='white', expand_x=True, expand_y=True,
             enable_events=True, drag_submits=True, motion_events=True
         )
     ]]
@@ -53,9 +53,9 @@ def left_part():
 def right_part():
     return sg.Col([[
         sg.TabGroup([[
-            sg.Tab('Пояснения', layout_right_note(), key='-NOTE-'),
-            sg.Tab('График', layout_right_graph(), k='-GRAPH-'),
-            sg.Tab('Таблица', layout_right_table(), k='-TABLE-'),
+            sg.Tab('Пояснения', layout_right_note(), key='-NOTE-'), #expand_x=True, expand_y=True),
+            sg.Tab('График', layout_right_graph(), k='-GRAPH-'), #expand_x=True, expand_y=True),
+            sg.Tab('Таблица', layout_right_table(), k='-TABLE-'), #expand_x=True, expand_y=True),
         ]], k='rtab', **rht_tabgroup)]
     ], **rht_col)
 
@@ -63,7 +63,7 @@ def right_part():
 def main_layout():
     return [
         [left_part(), sg.VSep(), right_part()],
-        # [sg.Push(), sg.Sizegrip()],
+        [sg.Push(), sg.Sizegrip()],
     ]
 
 

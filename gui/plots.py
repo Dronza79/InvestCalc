@@ -6,6 +6,7 @@ from core.utilites import format_digit_for_graph
 class InvestmentChart:
     def __init__(self, parent, graph_key='-G-'):
         self.graph_elem = parent.window[graph_key]
+        self.graph_elem.bind('<Configure>', '+Resized')
         self.interactive_elements = []
         self.totals = []
         self.deposits = []
@@ -15,6 +16,7 @@ class InvestmentChart:
         self.display_max_y = 0
 
     def draw(self, data):
+        self.graph_elem.CanvasSize = self.graph_elem.get_size()
         years, self.deposits, self.interests = data
         self.totals = [d + i for d, i in zip(self.deposits, self.interests)]
         self.max_x, self.max_y = max(years), max(self.totals)
@@ -26,8 +28,8 @@ class InvestmentChart:
         self.display_max_y = ((self.max_y // step_y) + 1) * step_y
 
         # Настройка масштаба (увеличиваем отступы под новые позиции названий)
-        offset_x, offset_y = self.max_x * 0.25, self.display_max_y * 0.2
-        self.graph_elem.change_coordinates((-offset_x, -offset_y), (self.max_x * 1.15, self.display_max_y * 1.2))
+        offset_x, offset_y = self.max_x * 0.18, self.display_max_y * 0.15
+        self.graph_elem.change_coordinates((-offset_x, -offset_y), (self.max_x * 1.1, self.display_max_y * 1.1))
         self.graph_elem.erase()
 
         # 1. СЛОИ
@@ -38,39 +40,33 @@ class InvestmentChart:
 
         # 2. СЕТКА
         curr_y = step_y
-        self.graph_elem.draw_text('0', (-self.max_x * 0.03, 0), text_location='e', font='Arial 8')  # Рисуем один ноль
+        # self.graph_elem.draw_text('0', (-self.max_x * 0.03, 0), color='#D0D0D0', text_location='e', font='Courier 10')
         while curr_y <= self.display_max_y:
-            self.graph_elem.draw_line((0, curr_y), (self.max_x, curr_y), color='#D0D0D0')
+            self.graph_elem.draw_line((0, curr_y), (self.max_x * 1.01, curr_y), color='#D0D0D0')
             self.graph_elem.draw_text(
-                format_digit_for_graph(curr_y), (-self.max_x * 0.03, curr_y), text_location='e', font='Arial 8')
+                format_digit_for_graph(curr_y), (-self.max_x * 0.03, curr_y),
+                color='#D0D0D0', text_location='e', font='Courier 10')
             curr_y += step_y
 
         x_step = max(1, math.ceil(self.max_x / 6))
-        for x in range(int(x_step), int(self.max_x) + 1, int(x_step)):
-            self.graph_elem.draw_line((x, 0), (x, self.display_max_y), color='#D0D0D0')
-            self.graph_elem.draw_text(str(x), (x, -self.display_max_y * 0.05), font='Arial 8')
+        # for x in range(int(x_step), int(self.max_x) + 1, int(x_step)):
+        for x in range(0, int(self.max_x) + 1, int(x_step)):
+            self.graph_elem.draw_line((x, 0), (x, self.display_max_y * 1.01), color='#D0D0D0')
+            self.graph_elem.draw_text(str(x), (x, -self.display_max_y * 0.05), color='#D0D0D0', font='Courier 11')
 
         # 3. ОСИ И НАЗВАНИЯ (Новое расположение)
-        self.graph_elem.draw_line((0, 0), (0, self.display_max_y * 1.1), width=2)
-        self.graph_elem.draw_line((0, 0), (self.max_x * 1.1, 0), width=2)
+        self.graph_elem.draw_line((0, 0), (0, self.display_max_y * 1.01), width=2)
+        self.graph_elem.draw_line((0, 0), (self.max_x * 1.01, 0), width=2)
 
         # Y Слева вертикально
-        self.graph_elem.draw_text('Капитал, руб.', (-self.max_x * 0.15, self.display_max_y / 2), angle=90,
-                                  font='Arial 10 bold')
+        self.graph_elem.draw_text('Размер капитала (\u20BD)', (-self.max_x * 0.15, self.display_max_y / 2), angle=90,
+                                  font='Courier 12 bold')
         # X Снизу горизонтально
-        self.graph_elem.draw_text('Период инвестирования (годы)', (self.max_x / 2, -self.display_max_y * 0.1),
-                                  font='Arial 10 bold')
+        self.graph_elem.draw_text('Инвест горизонт (срок, годы)', (self.max_x / 2, -self.display_max_y * 0.1),
+                                  font='Courier 12 bold')
 
         # 4. ЛЕГЕНДА
-        lx, ly = self.max_x * 0.05, self.display_max_y * 1.05
-        self.graph_elem.draw_rectangle((lx, ly + self.display_max_y * 0.05), (lx + self.max_x * 0.05, ly),
-                                       fill_color='#2ecc71')
-        self.graph_elem.draw_text('Доход', (lx + self.max_x * 0.06, ly + self.display_max_y * 0.025), text_location='w')
-        lx2 = lx + self.max_x * 0.25
-        self.graph_elem.draw_rectangle((lx2, ly + self.display_max_y * 0.05), (lx2 + self.max_x * 0.05, ly),
-                                       fill_color='#3498db')
-        self.graph_elem.draw_text('Внесено', (lx2 + self.max_x * 0.06, ly + self.display_max_y * 0.025),
-                                  text_location='w')
+        self.draw_legend()
 
     def update_cursor(self, mouse_coords):
         if mouse_coords is None:
@@ -105,12 +101,12 @@ class InvestmentChart:
                     # Доход (СВЕРХУ - text_location='s')
                     txt_int = self.graph_elem.draw_text(
                         f'Доход: {format_digit_for_graph(v_int)}', (idx, v_total + offset),
-                        color='#1b5e20', font='Arial 9 bold', text_location='s')
+                        color='#1b5e20', font='Courier 9 bold', text_location='s')
 
                     # Внесено (СНИЗУ - text_location='n')
                     txt_dep = self.graph_elem.draw_text(
                         f'Внесено: {format_digit_for_graph(v_dep)}', (idx, v_dep - offset),
-                        color='#0d47a1', font='Arial 9 bold', text_location='n')
+                        color='#0d47a1', font='Courier 9 bold', text_location='n')
 
                     self.interactive_elements.extend([m1, m2, txt_int, txt_dep])
 
@@ -121,15 +117,51 @@ class InvestmentChart:
                     (idx - 0.5, -self.display_max_y * 0.03), (idx + 0.5, -self.display_max_y * 0.07),
                     fill_color='white', line_width=0, line_color='black')
                 t_x = self.graph_elem.draw_text(
-                    str(idx), (idx, -self.display_max_y * 0.05), color='red', font='Arial 12 bold')
+                    str(idx), (idx, -self.display_max_y * 0.05), color='#9154CE', font='Courier 12 bold')
 
                 # Ось Y
                 bg_y = self.graph_elem.draw_rectangle(
-                    (-self.max_x * 0.13, v_total + self.display_max_y * 0.03),
+                    (-self.max_x * 0.12, v_total + self.display_max_y * 0.03),
                     (-0.2, v_total - self.display_max_y * 0.03),
                     fill_color='white', line_width=0, line_color='black')
                 t_y = self.graph_elem.draw_text(
                     format_digit_for_graph(v_total), (-self.max_x * 0.03, v_total),
-                    color='red', font='Arial 12 bold', text_location='e')
+                    color='#9154CE', font='Courier 12 bold', text_location='e')
 
                 self.interactive_elements.extend([l1, l2, bg_x, t_x, bg_y, t_y])
+
+    def draw_legend(self):
+        # 1. Позиция: ВНУТРИ графика (левый верхний угол)
+        # Делаем отступ от осей внутрь на 2% от ширины и высоты
+        lx = self.max_x * 0.02
+        ly_top = self.display_max_y * 0.98  # На 2% ниже верхней границы Y
+
+        # Габариты (в 2 раза меньше первоначальных)
+        l_width = self.max_x * 0.15
+        l_height = self.display_max_y * 0.08
+
+        # 2. Белая подложка с тонкой рамкой (чтобы сетка не мешала тексту)
+        self.graph_elem.draw_rectangle((lx, ly_top),
+                                       (lx + l_width, ly_top - l_height),
+                                       fill_color='white', line_color='#CCCCCC', line_width=1)
+
+        # Параметры элементов (уменьшенные)
+        square_w = self.max_x * 0.02
+        square_h = self.display_max_y * 0.02
+        text_offset_x = self.max_x * 0.04
+
+        # 3. Элемент: Доход
+        y_vneseno = ly_top - self.display_max_y * 0.015
+        self.graph_elem.draw_rectangle((lx + self.max_x * 0.01, y_vneseno),
+                                       (lx + self.max_x * 0.01 + square_w, y_vneseno - square_h),
+                                       fill_color='#2ecc71', line_width=0)
+        self.graph_elem.draw_text('Доход', (lx + text_offset_x, y_vneseno - square_h / 2),
+                                  text_location='w', font='Courier 9')
+
+        # 4. Элемент: Внесено
+        y_dohod = y_vneseno - self.display_max_y * 0.03
+        self.graph_elem.draw_rectangle((lx + self.max_x * 0.01, y_dohod),
+                                       (lx + self.max_x * 0.01 + square_w, y_dohod - square_h),
+                                       fill_color='#3498db', line_width=0)
+        self.graph_elem.draw_text('Внесено', (lx + text_offset_x, y_dohod - square_h / 2),
+                                  text_location='w', font='Courier 9')
