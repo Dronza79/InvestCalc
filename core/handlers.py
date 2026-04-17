@@ -102,7 +102,9 @@ def calculate_gains(start_date, end_date, initial, payment, rate, period_payment
     if inf_enabled:
         years = (end_date - start_date).days / 365.25
         capital_inf = current_balance / ((1 + INF_RATE) ** years)
+        payment_inf = payment * ((1 + INF_RATE) ** years)
         result['capital_inf'] = ratio.up(int(capital_inf))
+        result['payment_inf'] = ratio.up(int(payment_inf))
         result['inflation'] = ratio.up(int(current_balance - capital_inf))
 
     result.update({

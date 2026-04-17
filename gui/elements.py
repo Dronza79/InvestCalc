@@ -295,7 +295,7 @@ def invest_liner_output(key, **kwargs):
     ]], expand_x=True, element_justification='l', pad=10)
 
 
-def invest_inf_output(capital_inf, horizon, start_date, **kwargs):
+def invest_inf_output(capital_inf, payment_inf, horizon, start_date, **kwargs):
     param = {'font': 'Courier 14', 'pad': (5, 0)}  # 'background_color': 'red'}
     left_col = sg.Col([[sg.Image(info_ico)]])
     right_col = sg.Col([
@@ -304,9 +304,15 @@ def invest_inf_output(capital_inf, horizon, start_date, **kwargs):
         ], [
             sg.Text(f'на капитал можно будет приобрести столько же,', **param),
         ], [
-            sg.Text(f'сколько и в настоящее время на сумму {div_to_ranks(capital_inf)} \u20BD', **param),
+            sg.Text(f'сколько и в настоящее время на сумму {div_to_ranks(capital_inf)}\u20BD', **param),
         ], [
             sg.Text(f'в ценах по состоянию на {start_date:%d.%m.%Y} г.', **param),
+        ], [
+            sg.HSeparator(),
+        ], [
+            sg.Text(f'Однако, с учетом инфляции через {format_horizon(horizon)}', **param),
+        ], [
+            sg.Text(f'регулярный платеж будет составлять {div_to_ranks(payment_inf)}\u20BD', **param),
         ]])
     return sg.Frame('', [[left_col, right_col]],
                     expand_x=True, element_justification='l', pad=10,
