@@ -1,8 +1,11 @@
+import calendar
+from datetime import date
+
 from dateutil.relativedelta import relativedelta
 
-from core.config import *
-from core.models import Period
-from core.utilites import div_to_ranks
+from .config import *
+from .models import Period
+from .utilites import div_to_ranks
 
 
 def calculate_tax(year_profit):
@@ -19,55 +22,88 @@ def calculate_tax(year_profit):
 def calculate_gains(start_date, end_date, initial, payment, rate, period_payment,
                     period_profit, tax_enabled, inf_enabled, ratio, **kwargs):
     """
-    Основной движок с логикой капитализации и налогов.
+    Основной расчет капитала с учетом периодов капитализации, периодов платежей и периодов налогов.
     """
+    # Определяем границы отчетных периодов (конец года для налогов и таблицы)
+    def get_next_year_end(d):
+        return date(d.year + 1, d.month, d.day)
+
     result = {}
     table_data = []
-
-    current_balance = initial
     graph_data = [initial, [0], [payment], [0]]
 
-    total_deposit = 0
-    total_income = 0
-    total_taxes = 0
-    year_profit = 0.0
+    current_balance = float(initial)
+    total_deposit = 0.0
+    total_income = 0.0
+    total_taxes = 0.0
+
+    # Годовые накопители для таблицы/налогов
+    year_profit_for_tax = 0.0
+    profit_12_month = 0.0
+    payment_12_month = 0.0
     accumulated_profit = 0.0
-    profit_12_month = 0
-    payment_12_month = 0
     count = 0
 
-    # Указатели на даты следующих событий
+    curr_date = start_date
+
     next_payment_date = start_date
     next_profit_date = start_date + period_profit
-    curr_date = start_date
-    next_actual_year_date = start_date + relativedelta(years=1)
+    next_report_date = get_next_year_end(curr_date)
 
-    while curr_date <= end_date:
+    # Кэшируем функции
+    calc_tax = calculate_tax
 
-        # Наполнение данных
-        graph_day = (curr_date == next_actual_year_date or curr_date == end_date)
-        if graph_day:
+    while curr_date < end_date:
+        # Ищем ближайшую дату, когда что-то произойдет
+        next_event = min(next_payment_date, next_profit_date, next_report_date, end_date)
+        days_in_period = (next_event - curr_date).days
+
+        if days_in_period > 0:
+            # Считаем проценты только за прошедшие дни до события
+            # Учитываем реальное количество дней в текущем году для точности daily_rate
+            year_days = 366 if calendar.isleap(curr_date.year) else 365
+            daily_rate = (rate / 100) / year_days
+
+            # ВАЖНО: Если начисление (капитализация) не ежедневно,
+            # то внутри периода проценты НЕ увеличивают базу. Это простой процент,
+            # который станет сложным только в next_profit_date.
+            period_profit_val = current_balance * daily_rate * days_in_period
+
+            # Накапливаем в "буфер" капитализации
+            accumulated_profit += period_profit_val
+            profit_12_month += period_profit_val
+
+        curr_date = next_event
+
+        # 1. Событие: Капитализация (период начисления процентов)
+        if curr_date == next_profit_date:
+            current_balance += accumulated_profit
+            total_income += accumulated_profit
+            year_profit_for_tax += accumulated_profit
+            accumulated_profit = 0.0
+            next_profit_date += period_profit
+
+        # 3. Событие: Конец года (Налоги и отчетность)
+        if curr_date == next_report_date or curr_date == end_date:
+            if tax_enabled:
+                tax = calc_tax(year_profit_for_tax)
+                total_taxes += tax
+                year_profit_for_tax = 0.0
+
+            # Здесь логика формирования table_data (раз в год)
             count += 1
             graph_data[1].append(count)
             graph_data[2].append(round(total_deposit))
-            # graph_data[1].append(round(payment_12_month))
-            # graph_data[1].append(round(current_balance - profit_12_month))
-            graph_data[3].append(round(profit_12_month))
-            # graph_data[2].append(round(profit_12_month + initial))
-            # graph_data[2].append(round(current_balance - total_deposit - initial))
-            next_actual_year_date += relativedelta(years=1)
+            graph_data[3].append(round(current_balance - total_deposit - initial))
 
             start_balance = current_balance - payment_12_month - profit_12_month
-            # start_balance = current_balance - total_deposit - current_balance + total_deposit
             table_data += [
                 [
-                    # count,
-                    f'{curr_date:%d-%m-%y}',
+                    count,
+                    # f'{curr_date:%d.%m.%y}',
                     f'{div_to_ranks(round(start_balance))}\u20BD',
-                    # f'{div_to_ranks(round(total_deposit))}\u20BD',
                     f'{div_to_ranks(round(payment_12_month))}\u20BD',
                     f'{div_to_ranks(round(profit_12_month))}\u20BD',
-                    # f'{div_to_ranks(round(current_balance - total_deposit))}\u20BD',
                     f'{div_to_ranks(calculate_tax(profit_12_month))}\u20BD' if tax_enabled else '--',
                     f'{div_to_ranks(round(current_balance))}\u20BD'
                 ]
@@ -75,40 +111,16 @@ def calculate_gains(start_date, end_date, initial, payment, rate, period_payment
             profit_12_month = 0
             payment_12_month = 0
 
-        # 1. Начисление процентов (Капитализация)
-        daily_rate = (rate / 100) / (curr_date + relativedelta(years=1) - curr_date).days
-        day_profit = current_balance * daily_rate
-        accumulated_profit += day_profit
-        profit_12_month += day_profit
+            next_report_date = get_next_year_end(curr_date)
 
-        if curr_date == next_profit_date:
-            current_balance += accumulated_profit
-            total_income += accumulated_profit
-            year_profit += accumulated_profit
-            next_profit_date += period_profit
-            accumulated_profit = 0.0
-
-        # 2. Пополнение счета
+        # 2. Событие: Пополнение
         if curr_date == next_payment_date and curr_date < end_date:
             current_balance += payment
             total_deposit += payment
             payment_12_month += payment
             next_payment_date += period_payment
 
-        # 3. Начисление налогов
-        is_tax_day = (curr_date.month == 12 and curr_date.day == 31 or curr_date == end_date)
-        if is_tax_day and tax_enabled:
-            tax = calculate_tax(year_profit)
-            year_profit = 0.0
-            # current_balance -= tax
-            total_taxes += tax
-
-        curr_date += relativedelta(days=1)
-
-    if tax_enabled:
-        result["total_taxes"] = ratio.up(total_taxes)
-
-    # 4. Учет инфляции (дисконтирование итогового капитала)
+    # Финальные расчеты инфляции (без изменений)
     if inf_enabled:
         years = (end_date - start_date).days / 365.25
         capital_inf = current_balance / ((1 + INF_RATE) ** years)
@@ -142,6 +154,7 @@ def binary_find_param(low, high, sim_func, capital, **kwargs):
 
 def calc_installment(**kwargs):
     ratio = kwargs.get('ratio')
+    payment = kwargs.pop('payment', 0)
     payment = binary_find_param(
         0, 10_000_000,
         lambda p: calculate_gains(payment=p, **kwargs),
@@ -249,7 +262,6 @@ def get_balance_portfolio(balance_capital, stocks, bonds, funds, metals, percent
 
 
 def calculations(type_calc, **kwargs):
-    # if type_calc in ['gains_capital', 'time_to_goal', 'installment', 'percentage']:
     if type_calc == 'portfolio':
         return get_balance_portfolio(type_calc=type_calc, **kwargs)
     return main_invest_calc(type_calc=type_calc, **kwargs)

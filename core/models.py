@@ -43,7 +43,7 @@ class Period:
 
     @property
     def duration(self):
-        return self.__value
+        return (date.today() + self.__value - date.today()).days
 
     @classmethod
     def glp(cls, key=''):

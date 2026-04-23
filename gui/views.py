@@ -9,7 +9,7 @@ class MainView:
         self.event = self.value = self.stop = None
         self.window = main_window()
         self.graph_key = '-G-'
-        self.graph_data = None
+        self.graph_data = [0, [], [], []]
         self.chart = InvestmentChart(self, self.graph_key)
         self.custom_table_widget()
         self.run()
@@ -51,7 +51,7 @@ class MainView:
                     self.window.extend_layout(
                         outres,
                         [[layout_extend(f'OUTRES-{outres.metadata}', result)]])
-                    self.graph_data = result['graph_data']
+                    self.graph_data = result.get('graph_data', self.graph_data)
 
                 if self.value['ltab'] == '-INVEST-':
                     self.chart.draw(result['graph_data'])
@@ -118,12 +118,17 @@ class MainView:
 
     def check_fullness_raw_data(self):
         errors = set()
+        base_set = {'payment', 'horizon', 'rate', 'capital', 'initial'}
         type_calc = {
             '-INVEST-': {
-                'gains_capital': ['payment', 'horizon', 'rate'],
-                'installment': ['capital', 'horizon', 'rate'],
-                'time_to_goal': ['payment', 'capital', 'rate'],
-                'percentage': ['payment', 'capital', 'horizon'],
+                # 'gains_capital': ['payment', 'horizon', 'rate'],
+                # 'installment': ['capital', 'horizon', 'rate'],
+                # 'time_to_goal': ['payment', 'capital', 'rate'],
+                # 'percentage': ['payment', 'capital', 'horizon'],
+                ('capital',): 'gains_capital',
+                ('payment',): 'installment',
+                ('horizon', ): 'time_to_goal',
+                ('rate',): 'percentage',
             },
             '-BOND-': {},
             '-BALANCE-': {
@@ -137,24 +142,33 @@ class MainView:
             },
         }
         tab = self.value['ltab']
-        for name, group in type_calc[tab].items():
-            # print(f'{name=} {group=}')
-            if tab == '-INVEST-' and all(
-                    self.value[x] if x != 'payment' else max(self.value['initial'], self.value['payment'])
-                    for x in group):
-                self.value['type_calc'] = name
-                return
-            elif tab == '-BALANCE-' and all(bool(self.value[x]) is bool(self.value[y]) for x, y in group):
-                self.value['type_calc'] = name
-                return
-            for val in group:
-                if tab == '-INVEST-':
-                    if not self.value[val]:
-                        errors.add((val, fields_input[val],))
-                elif tab == '-BALANCE-':
-                    if not (bool(self.value[val[0]]) is bool(self.value[val[1]])):
-                        field = val[0] if not self.value[val[0]] else val[1]
-                        errors.add((field, fields_input[val[0]],))
+        if tab == '-INVEST-':
+            empty_field = base_set - {x for x in base_set if self.value[x]}
+            empty_field.discard('initial')
+            if len(empty_field) > 1:
+                for val in empty_field:
+                    errors.add((val, fields_input[val],))
+            # print(f"{type_calc['-INVEST-'].get(tuple(empty_field))=}")
+            self.value['type_calc'] = type_calc['-INVEST-'].get(tuple(empty_field))
+        else:
+            for name, group in type_calc[tab].items():
+                # print(f'{name=} {group=}')
+                # if tab == '-INVEST-' and all(
+                #         self.value[x] if x != 'payment' else max(self.value['initial'], self.value['payment'])
+                #         for x in group):
+                #     self.value['type_calc'] = name
+                #     return
+                if tab == '-BALANCE-' and all(bool(self.value[x]) is bool(self.value[y]) for x, y in group):
+                    self.value['type_calc'] = name
+                    return
+                for val in group:
+                    if tab == '-INVEST-':
+                        if not self.value[val]:
+                            errors.add((val, fields_input[val],))
+                    elif tab == '-BALANCE-':
+                        if not (bool(self.value[val[0]]) is bool(self.value[val[1]])):
+                            field = val[0] if not self.value[val[0]] else val[1]
+                            errors.add((field, fields_input[val[0]],))
         for val in errors:
             self.window[val[0]].update(background_color='Salmon')
 
@@ -162,7 +176,7 @@ class MainView:
 
     def data_adjustment_in_parts(self):
         """
-        Проверка данных в группах полей и их автозаполнение
+        Проверка данных в группах полей для баланса портфеля и их автозаполнение
         :return:
         """
         lst_money = ['stocks', 'bonds', 'funds', 'metals']
