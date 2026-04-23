@@ -170,8 +170,8 @@ def reformat_raw_input_data(
             else round(float(raw_data[key].replace(' ', '').replace(',', '.')), 2) if raw_data[key]
             else 0
         )
-        if key == 'payment' and not value:
-            continue
+        # if key == 'payment' and not value:
+        #     continue
         valid_data[key] = value
 
     valid_data['type_calc'] = type_calc

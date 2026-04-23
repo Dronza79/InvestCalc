@@ -1,6 +1,7 @@
 import math
 
 from core.utilites import format_digit_for_graph
+from gui.params import COLOR_PROFIT, COLOR_INITIAL, COLOR_DEPOSIT
 
 
 class InvestmentChart:
@@ -9,21 +10,22 @@ class InvestmentChart:
         self.graph_elem.bind('<Configure>', '+Resized')
         self.interactive_elements = []
         self.totals = []
-        self.deposits = []
-        self.interests = []
+        self.payments = []
+        self.profits = []
+        self.initial = 0
         self.max_x = 0
         self.max_y = 0
         self.display_max_y = 0
 
     def draw(self, data):
         self.graph_elem.CanvasSize = self.graph_elem.get_size()
-        years, self.deposits, self.interests = data
-        self.totals = [d + i for d, i in zip(self.deposits, self.interests)]
+        self.initial, years, self.payments, self.profits = data
+        self.totals = [d + i + self.initial for d, i in zip(self.payments, self.profits)]
         self.max_x, self.max_y = max(years), max(self.totals)
 
         # Выбор шага Y
         cap = 10 ** (len(str(self.max_y)) - 2)
-        step_y = ((self.max_y + cap - 1) // cap * cap) // 5
+        step_y = ((self.max_y + cap - 1) // cap * cap) // 4
 
         self.display_max_y = ((self.max_y // step_y) + 1) * step_y
 
@@ -33,10 +35,13 @@ class InvestmentChart:
         self.graph_elem.erase()
 
         # 1. СЛОИ
-        poly_total = [(0, 0)] + [(years[i], self.totals[i]) for i in range(len(years))] + [(self.max_x, 0)]
-        self.graph_elem.draw_polygon(poly_total, fill_color='#2ecc71', line_color='#27ae60')
-        poly_dep = [(0, 0)] + [(years[i], self.deposits[i]) for i in range(len(years))] + [(self.max_x, 0)]
-        self.graph_elem.draw_polygon(poly_dep, fill_color='#3498db', line_color='#2980b9')
+        start = (0, self.initial)
+        end = (self.max_x, self.initial)
+        poly_total = [start] + [(years[i], self.totals[i]) for i in range(len(years))] + [end]
+        self.graph_elem.draw_polygon(poly_total, fill_color=COLOR_PROFIT[0], line_color=COLOR_PROFIT[1])
+        poly_dep = [start] + [(years[i], self.payments[i] + self.initial) for i in range(len(years))] + [end]
+        self.graph_elem.draw_polygon(poly_dep, fill_color=COLOR_DEPOSIT[0], line_color=COLOR_DEPOSIT[1])
+        self.graph_elem.draw_rectangle(start, (self.max_x, 0), fill_color=COLOR_INITIAL[0], line_width=0)
 
         # 2. СЕТКА
         curr_y = step_y
@@ -49,7 +54,6 @@ class InvestmentChart:
             curr_y += step_y
 
         x_step = max(1, math.ceil(self.max_x / 6))
-        # for x in range(int(x_step), int(self.max_x) + 1, int(x_step)):
         for x in range(0, int(self.max_x) + 1, int(x_step)):
             self.graph_elem.draw_line((x, 0), (x, self.display_max_y * 1.01), color='#D0D0D0')
             self.graph_elem.draw_text(str(x), (x, -self.display_max_y * 0.05), color='#D0D0D0', font='Courier 11')
@@ -80,7 +84,7 @@ class InvestmentChart:
                     self.graph_elem.delete_figure(item)
                 self.interactive_elements.clear()
 
-                v_total, v_dep, v_int = self.totals[idx], self.deposits[idx], self.interests[idx]
+                v_total, v_dep, v_int = self.totals[idx], self.payments[idx], self.profits[idx]
 
                 # Прицелы
                 l1 = self.graph_elem.draw_line((idx, 0), (idx, v_total), color='gray', width=1)
@@ -92,8 +96,8 @@ class InvestmentChart:
                 if idx > 0:
                     m1 = self.graph_elem.draw_circle((idx, v_total), self.max_x * 0.005, fill_color='orange',
                                                      line_color='white')
-                    m2 = self.graph_elem.draw_circle((idx, v_dep), self.max_x * 0.005, fill_color='orange',
-                                                     line_color='white')
+                    m2 = self.graph_elem.draw_circle((idx, v_dep + self.initial), self.max_x * 0.005,
+                                                     fill_color='orange', line_color='white')
 
                     # ПОДПИСИ
                     offset = self.display_max_y * 0.005
@@ -101,11 +105,13 @@ class InvestmentChart:
                     # Доход (СВЕРХУ - text_location='s')
                     txt_int = self.graph_elem.draw_text(
                         f'Доход: {format_digit_for_graph(v_int)}', (idx, v_total + offset),
+                        # f'Доход: {format_digit_for_graph(v_int - self.initial)}', (idx, v_total + offset),
                         color='#1b5e20', font='Courier 9 bold', text_location='s')
 
                     # Внесено (СНИЗУ - text_location='n')
                     txt_dep = self.graph_elem.draw_text(
-                        f'Внесено: {format_digit_for_graph(v_dep)}', (idx, v_dep - offset),
+                        f'Внесено: {format_digit_for_graph(v_dep)}', (idx, v_dep - offset + self.initial),
+                        # f'Внесено: {format_digit_for_graph(v_dep - self.initial)}', (idx, v_dep - offset),
                         color='#0d47a1', font='Courier 9 bold', text_location='n')
 
                     self.interactive_elements.extend([m1, m2, txt_int, txt_dep])
@@ -154,7 +160,7 @@ class InvestmentChart:
         y_vneseno = ly_top - self.display_max_y * 0.015
         self.graph_elem.draw_rectangle((lx + self.max_x * 0.01, y_vneseno),
                                        (lx + self.max_x * 0.01 + square_w, y_vneseno - square_h),
-                                       fill_color='#2ecc71', line_width=0)
+                                       fill_color=COLOR_PROFIT[0], line_width=0)
         self.graph_elem.draw_text('Доход', (lx + text_offset_x, y_vneseno - square_h / 2),
                                   text_location='w', font='Courier 9')
 
@@ -162,6 +168,6 @@ class InvestmentChart:
         y_dohod = y_vneseno - self.display_max_y * 0.03
         self.graph_elem.draw_rectangle((lx + self.max_x * 0.01, y_dohod),
                                        (lx + self.max_x * 0.01 + square_w, y_dohod - square_h),
-                                       fill_color='#3498db', line_width=0)
+                                       fill_color=COLOR_DEPOSIT[0], line_width=0)
         self.graph_elem.draw_text('Внесено', (lx + text_offset_x, y_dohod - square_h / 2),
                                   text_location='w', font='Courier 9')

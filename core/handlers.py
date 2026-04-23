@@ -22,25 +22,58 @@ def calculate_gains(start_date, end_date, initial, payment, rate, period_payment
     Основной движок с логикой капитализации и налогов.
     """
     result = {}
+    table_data = []
+
     current_balance = initial
-    total_deposit = current_balance
+    graph_data = [initial, [0], [payment], [0]]
+
+    total_deposit = 0
     total_income = 0
     total_taxes = 0
     year_profit = 0.0
-    tax = 0
     accumulated_profit = 0.0
     profit_12_month = 0
-    graph_data = [[0], [initial + payment], [0]]
-    table_data = []
-    calendar_year_date = start_date + relativedelta(years=1)
+    payment_12_month = 0
     count = 0
 
     # Указатели на даты следующих событий
     next_payment_date = start_date
     next_profit_date = start_date + period_profit
     curr_date = start_date
+    next_actual_year_date = start_date + relativedelta(years=1)
 
     while curr_date <= end_date:
+
+        # Наполнение данных
+        graph_day = (curr_date == next_actual_year_date or curr_date == end_date)
+        if graph_day:
+            count += 1
+            graph_data[1].append(count)
+            graph_data[2].append(round(total_deposit))
+            # graph_data[1].append(round(payment_12_month))
+            # graph_data[1].append(round(current_balance - profit_12_month))
+            graph_data[3].append(round(profit_12_month))
+            # graph_data[2].append(round(profit_12_month + initial))
+            # graph_data[2].append(round(current_balance - total_deposit - initial))
+            next_actual_year_date += relativedelta(years=1)
+
+            start_balance = current_balance - payment_12_month - profit_12_month
+            # start_balance = current_balance - total_deposit - current_balance + total_deposit
+            table_data += [
+                [
+                    # count,
+                    f'{curr_date:%d-%m-%y}',
+                    f'{div_to_ranks(round(start_balance))}\u20BD',
+                    # f'{div_to_ranks(round(total_deposit))}\u20BD',
+                    f'{div_to_ranks(round(payment_12_month))}\u20BD',
+                    f'{div_to_ranks(round(profit_12_month))}\u20BD',
+                    # f'{div_to_ranks(round(current_balance - total_deposit))}\u20BD',
+                    f'{div_to_ranks(calculate_tax(profit_12_month))}\u20BD' if tax_enabled else '--',
+                    f'{div_to_ranks(round(current_balance))}\u20BD'
+                ]
+            ]
+            profit_12_month = 0
+            payment_12_month = 0
 
         # 1. Начисление процентов (Капитализация)
         daily_rate = (rate / 100) / (curr_date + relativedelta(years=1) - curr_date).days
@@ -59,6 +92,7 @@ def calculate_gains(start_date, end_date, initial, payment, rate, period_payment
         if curr_date == next_payment_date and curr_date < end_date:
             current_balance += payment
             total_deposit += payment
+            payment_12_month += payment
             next_payment_date += period_payment
 
         # 3. Начисление налогов
@@ -68,30 +102,6 @@ def calculate_gains(start_date, end_date, initial, payment, rate, period_payment
             year_profit = 0.0
             # current_balance -= tax
             total_taxes += tax
-
-        # 4. Наполнение данных
-        graph_day = (curr_date == calendar_year_date or curr_date == end_date)
-        if graph_day:
-            count += 1
-            graph_data[0].append(count)
-            graph_data[1].append(round(total_deposit))
-            # graph_data[1].append(round(current_balance - profit_12_month))
-            # graph_data[2].append(round(profit_12_month))
-            graph_data[2].append(round(current_balance - total_deposit))
-            calendar_year_date += relativedelta(years=1)
-
-            start_balance = current_balance - payment * 12 - profit_12_month
-            table_data += [
-                [
-                    count,
-                    f'{div_to_ranks(round(start_balance))}\u20BD',
-                    f'{div_to_ranks(round(payment * 12))}\u20BD',
-                    f'{div_to_ranks(round(profit_12_month))}\u20BD',
-                    f'{div_to_ranks(calculate_tax(profit_12_month))}\u20BD' if tax_enabled else '--',
-                    f'{div_to_ranks(round(current_balance))}\u20BD'
-                ]
-            ]
-            profit_12_month = 0
 
         curr_date += relativedelta(days=1)
 
@@ -168,7 +178,7 @@ def calc_percentage(**kwargs):
 
 
 def main_invest_calc(type_calc, **kwargs):
-    # print(f'main_invest_calc({type_calc=}, {kwargs=})')
+    print(f'main_invest_calc({type_calc=}, {kwargs=})')
 
     # Стратегии расчета
     strategies = {

@@ -11,6 +11,7 @@ class MainView:
         self.graph_key = '-G-'
         self.graph_data = None
         self.chart = InvestmentChart(self, self.graph_key)
+        self.custom_table_widget()
         self.run()
 
     def run(self):
@@ -89,6 +90,12 @@ class MainView:
         loc_x, loc_y = self.window.current_location()
         return loc_x + size_w // 2, loc_y + size_h // 2
 
+    def custom_table_widget(self):
+        widget = self.window['-DATA-TABLE-'].widget
+        widget.heading('#0', text='\n')
+        style_name = self.window['-DATA-TABLE-'].ttk_style_name + '.Heading'
+        self.window['-DATA-TABLE-'].ttk_style.configure(style_name, foreground='black')
+
     def managing_tab_visibility(self):
         if self.event != 'ltab':
             return
@@ -132,7 +139,9 @@ class MainView:
         tab = self.value['ltab']
         for name, group in type_calc[tab].items():
             # print(f'{name=} {group=}')
-            if tab == '-INVEST-' and all(self.value[x] for x in group):
+            if tab == '-INVEST-' and all(
+                    self.value[x] if x != 'payment' else max(self.value['initial'], self.value['payment'])
+                    for x in group):
                 self.value['type_calc'] = name
                 return
             elif tab == '-BALANCE-' and all(bool(self.value[x]) is bool(self.value[y]) for x, y in group):
