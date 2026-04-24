@@ -4,5 +4,7 @@
 /dist
 /build
 /__pycache__
+/tests
+conftest.py
 *.spec
 .env
