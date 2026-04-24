@@ -56,7 +56,7 @@ def additional_param():
         ]]),
         sg.Push(),
         sg.Frame('Кратность:', [[
-            sg.Combo(steps, default_value=steps[0], k='ratio', **combo_per)
+            sg.Combo(steps, default_value=steps[0], k='ratio_step', **combo_per)
         ]])
     ]], **main_frame)
 

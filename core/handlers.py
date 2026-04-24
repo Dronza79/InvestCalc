@@ -20,7 +20,7 @@ def calculate_tax(year_profit):
 
 
 def calculate_gains(start_date, end_date, initial, payment, rate, period_payment,
-                    period_profit, tax_enabled, inf_enabled, ratio, **kwargs):
+                    period_profit, tax_enabled, inf_enabled, ratio_step, **kwargs):
     """
     Основной расчет капитала с учетом периодов капитализации, периодов платежей и периодов налогов.
     """
@@ -125,14 +125,14 @@ def calculate_gains(start_date, end_date, initial, payment, rate, period_payment
         years = (end_date - start_date).days / 365.25
         capital_inf = current_balance / ((1 + INF_RATE) ** years)
         payment_inf = payment * ((1 + INF_RATE) ** years)
-        result['capital_inf'] = ratio.up(int(capital_inf))
-        result['payment_inf'] = ratio.up(int(payment_inf))
-        result['inflation'] = ratio.up(int(current_balance - capital_inf))
+        result['capital_inf'] = ratio_step.up(int(capital_inf))
+        result['payment_inf'] = ratio_step.up(int(payment_inf))
+        result['inflation'] = ratio_step.up(int(current_balance - capital_inf))
 
     result.update({
-        "current_balance": ratio.down(int(current_balance)),
-        "deposit": ratio.down(int(total_deposit)),
-        "income": ratio.down(int(total_income)),
+        "current_balance": ratio_step.down(int(current_balance)),
+        "deposit": ratio_step.down(int(total_deposit)),
+        "income": ratio_step.down(int(total_income)),
         'graph_data': graph_data,
         'table_data': table_data,
     })
@@ -153,14 +153,14 @@ def binary_find_param(low, high, sim_func, capital, **kwargs):
 
 
 def calc_installment(**kwargs):
-    ratio = kwargs.get('ratio')
+    ratio_step = kwargs.get('ratio_step')
     payment = kwargs.pop('payment', 0)
     payment = binary_find_param(
         0, 10_000_000,
         lambda p: calculate_gains(payment=p, **kwargs),
         **kwargs
     )
-    refined_payment = ratio.up(int(payment))
+    refined_payment = ratio_step.up(int(payment))
     res = calculate_gains(payment=refined_payment, **kwargs)
     return {**res, 'payment': refined_payment}
 

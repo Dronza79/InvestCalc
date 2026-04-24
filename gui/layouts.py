@@ -1,3 +1,4 @@
+from __version__ import VERSION
 from .elements import *
 
 
@@ -63,7 +64,7 @@ def right_part():
 def main_layout():
     return [
         [left_part(), sg.VSep(), right_part()],
-        [sg.Push(), sg.Sizegrip()],
+        [sg.T(f"Текущая версия: {VERSION}", font='_ 8'), sg.Push(), sg.Sizegrip()],
     ]
 
 

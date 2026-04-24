@@ -121,7 +121,7 @@ def clear_field_horizon(string: str):
 
 def reformat_raw_input_data(
         horizon: str, payment_step: Period, profit_step: Period, rate: str,
-        ratio: str, type_calc: str, tax_enabled: bool, inf_enabled: bool,
+        ratio_step: str, type_calc: str, tax_enabled: bool, inf_enabled: bool,
         ltab, pay_enabled, **raw_data
 ):
     valid_data = {}
@@ -132,7 +132,7 @@ def reformat_raw_input_data(
         valid_data = {
             'period_payment': payment_step,
             'period_profit': profit_step,
-            'ratio': ratio,
+            'ratio_step': ratio_step,
             'tax_enabled': tax_enabled,
             'inf_enabled': inf_enabled,
         }

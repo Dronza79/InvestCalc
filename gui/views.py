@@ -60,6 +60,9 @@ class MainView:
             elif self.event in ['-CLR-']: # 'Delete:46']:
                 [self.window[val].update('') for val in key_input_format]
 
+            elif 'step' in self.event:
+                self.window['-GO-'].set_focus()
+
     def update_cursor_graph(self):
         if self.event is None:
             return
@@ -121,19 +124,13 @@ class MainView:
         base_set = {'payment', 'horizon', 'rate', 'capital', 'initial'}
         type_calc = {
             '-INVEST-': {
-                # 'gains_capital': ['payment', 'horizon', 'rate'],
-                # 'installment': ['capital', 'horizon', 'rate'],
-                # 'time_to_goal': ['payment', 'capital', 'rate'],
-                # 'percentage': ['payment', 'capital', 'horizon'],
                 ('capital',): 'gains_capital',
                 ('payment',): 'installment',
                 ('horizon', ): 'time_to_goal',
                 ('rate',): 'percentage',
             },
-            '-BOND-': {},
             '-BALANCE-': {
                 'portfolio': [
-                    # ('balance_capital', 'balance_capital'),
                     ('stocks', 'percent_stocks'),
                     ('bonds', 'percent_bonds'),
                     ('funds', 'percent_funds'),
@@ -148,47 +145,37 @@ class MainView:
             if len(empty_field) > 1:
                 for val in empty_field:
                     errors.add((val, fields_input[val],))
+            elif len(empty_field) == 0:
+                empty_field.add('capital')
             # print(f"{type_calc['-INVEST-'].get(tuple(empty_field))=}")
             self.value['type_calc'] = type_calc['-INVEST-'].get(tuple(empty_field))
         else:
             for name, group in type_calc[tab].items():
-                # print(f'{name=} {group=}')
-                # if tab == '-INVEST-' and all(
-                #         self.value[x] if x != 'payment' else max(self.value['initial'], self.value['payment'])
-                #         for x in group):
-                #     self.value['type_calc'] = name
-                #     return
-                if tab == '-BALANCE-' and all(bool(self.value[x]) is bool(self.value[y]) for x, y in group):
+                if all(bool(self.value[x]) is bool(self.value[y]) for x, y in group):
                     self.value['type_calc'] = name
                     return
                 for val in group:
-                    if tab == '-INVEST-':
-                        if not self.value[val]:
-                            errors.add((val, fields_input[val],))
-                    elif tab == '-BALANCE-':
-                        if not (bool(self.value[val[0]]) is bool(self.value[val[1]])):
-                            field = val[0] if not self.value[val[0]] else val[1]
-                            errors.add((field, fields_input[val[0]],))
+                    if not (bool(self.value[val[0]]) is bool(self.value[val[1]])):
+                        field = val[0] if not self.value[val[0]] else val[1]
+                        errors.add((field, fields_input[val[0]],))
+
         for val in errors:
             self.window[val[0]].update(background_color='Salmon')
-
         return [error[1] for error in errors]
 
     def data_adjustment_in_parts(self):
         """
-        Проверка данных в группах полей для баланса портфеля и их автозаполнение
-        :return:
+        Предзаполнение данных во вкладке "Баланс портфеля" по колонкам.
+        Числа в позициях суммируются в Капитале
+        Проценты общее значение не превышает 100%. Как только сумма процентов достигла 100,
+        остальные незаполненные позиции обнуляются
+
         """
         lst_money = ['stocks', 'bonds', 'funds', 'metals']
         lst_percent = ['percent_stocks', 'percent_bonds', 'percent_funds', 'percent_metals']
 
         if self.event not in lst_money + lst_percent:
             return
-
-        # if not self.value['balance_capital']:
-        #     self.window['balance_capital'].update(background_color='Salmon')
-        #     popup_errors_notification(self, ['ОШИБКА!!!'], ["Необходимо заполнить капитал!!!"])
-        #     return
 
         def func(string: str):
             res = (clear_field_digits(string).replace(' ', '').replace(',', '.'))

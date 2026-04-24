@@ -322,7 +322,7 @@ combo_per = {
     # button_background_color: str = None,
     # button_arrow_color: str = None,
     # bind_return_key: bool = False,
-    # enable_events: bool = False,
+    'enable_events': True,
     # disabled: bool = False,
     'pad': (5, 10),
     # expand_x: bool = False,
