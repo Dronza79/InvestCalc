@@ -3,5 +3,6 @@
 /packages
 /dist
 /build
+/__pycache__
 *.spec
 .env
