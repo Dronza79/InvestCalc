@@ -60,7 +60,7 @@ class MainView:
             elif self.event in ['-CLR-']: # 'Delete:46']:
                 [self.window[val].update('') for val in key_input_format]
 
-            elif 'step' in self.event:
+            elif self.event and 'step' in self.event:
                 self.window['-GO-'].set_focus()
 
     def update_cursor_graph(self):
