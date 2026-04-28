@@ -89,6 +89,7 @@ def calculate_gains(start_date, end_date, initial, payment, rate, period_payment
                 tax = calc_tax(year_profit_for_tax)
                 total_taxes += tax
                 year_profit_for_tax = 0.0
+                result['total_taxes'] = total_taxes
 
             # Здесь логика формирования table_data (раз в год)
             count += 1
