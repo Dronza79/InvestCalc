@@ -21,6 +21,7 @@ def amount_money_input(key):
 def exchange_instrument_input(key):
     return sg.Frame(f'{fields_input[key]}:', [
         [
+            sg.T('\u2211'),
             sg.Input('', key=key, s=15, **other_in),
             sg.T('\u20BD'),
             sg.Input('', s=5, key=f'percent_{key}', **other_in),
